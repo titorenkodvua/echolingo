@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FileText, Upload, Edit3, Trash2, CheckCircle } from 'lucide-react';
+import { Plus, FileText, Upload, Edit3, Trash2, CheckCircle, RotateCcw } from 'lucide-react';
 import { DraftForm } from '../components/DraftForm';
 import { MaterialUpload } from '../components/MaterialUpload';
 import { MaterialEdit } from '../components/MaterialPublish';
@@ -290,9 +290,14 @@ export const HomePage: React.FC = () => {
               <button
                 onClick={loadData}
                 disabled={isLoading}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                className="p-2 text-primary-600 hover:text-primary-700"
+                title="Refresh"
               >
-                {isLoading ? 'Loading...' : 'Refresh'}
+                {isLoading ? (
+                  <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /></svg>
+                ) : (
+                  <RotateCcw className="w-5 h-5" />
+                )}
               </button>
             </div>
 
@@ -342,7 +347,7 @@ export const HomePage: React.FC = () => {
                         <div>Plays: {material.playCount}</div>
                         <button
                           onClick={() => setPipeline({ step: 'edit', material })}
-                          className="mt-2 p-2 text-primary-600 hover:text-primary-700 border border-primary-200 rounded"
+                          className="mt-2 p-2 text-primary-600 hover:text-primary-700"
                           title="Edit"
                         >
                           <Edit3 className="w-4 h-4" />

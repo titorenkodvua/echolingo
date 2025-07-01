@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Save, Loader2, Eye, EyeOff } from 'lucide-react';
 import { materialsApi } from '../utils/api';
 import type { Material, Transcription } from '../types';
@@ -29,6 +29,8 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTranscription, setShowTranscription] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const isPublished = material.status === 'published';
   const isReady = material.status === 'ready';
@@ -101,16 +103,52 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
     { value: 'C2', label: 'C2 - Mastery' }
   ];
 
+  const handleTitleClick = () => {
+    setEditingTitle(true);
+    setTimeout(() => {
+      titleInputRef.current?.focus();
+    }, 0);
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, title: e.target.value }));
+  };
+
+  const handleTitleBlur = () => {
+    setEditingTitle(false);
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setEditingTitle(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
-        {mode === 'edit' ? 'Edit Material' : 'Publish Material'}
-      </h2>
-      
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Material Info */}
         <div className="bg-gray-50 rounded-md p-4">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">{material.title}</h3>
+          {editingTitle ? (
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={formData.title}
+              onChange={handleTitleChange}
+              onBlur={handleTitleBlur}
+              onKeyDown={handleTitleKeyDown}
+              className="text-xl font-medium text-gray-900 bg-gray-50 border-b border-primary-300 focus:outline-none focus:border-primary-600 w-full mb-2"
+              maxLength={120}
+            />
+          ) : (
+            <h3
+              className="text-xl font-medium text-gray-900 mb-2 cursor-pointer hover:underline"
+              onClick={handleTitleClick}
+              title="Click to edit title"
+            >
+              {formData.title || 'Untitled'}
+            </h3>
+          )}
           <p className="text-sm text-gray-600">
             {material.language} → {material.targetLanguage.join(', ')}
           </p>
@@ -119,23 +157,6 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               Duration: {Math.round(material.duration / 60)} minutes
             </p>
           )}
-        </div>
-
-        {/* Title */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-            Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-            placeholder="Enter material title"
-            required
-          />
         </div>
 
         {/* Description */}
