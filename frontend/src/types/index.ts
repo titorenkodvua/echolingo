@@ -3,8 +3,6 @@ export interface Transcription {
   originalFileName: string;
   gladiaId: string;
   status: 'submitted' | 'processing' | 'completed' | 'failed';
-  sourceLanguage: string;
-  targetLanguage: string;
   duration: number | null;
   full_transcript: string;
   sentences: Sentence[];
@@ -42,7 +40,7 @@ export interface Material {
   tags: string[];
   isPublic: boolean;
   difficultyLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
-  sourceLanguage: string;
+  language: string;
   targetLanguage: string[];
   duration: number | null;
   estimatedTime: number | null;

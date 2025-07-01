@@ -14,7 +14,6 @@ export const DraftForm: React.FC<DraftFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     title: '',
-    sourceLanguage: 'en',
     targetLanguage: ['ru']
   });
 
@@ -51,7 +50,6 @@ export const DraftForm: React.FC<DraftFormProps> = ({
     try {
       const response = await materialsApi.createDraft({
         title: formData.title,
-        sourceLanguage: formData.sourceLanguage,
         targetLanguage: formData.targetLanguage,
         userId: 'anonymous' // TODO: Get from auth context
       });
@@ -68,21 +66,6 @@ export const DraftForm: React.FC<DraftFormProps> = ({
       setIsSubmitting(false);
     }
   };
-
-  const languageOptions = [
-    { code: 'en', name: 'English' },
-    { code: 'ru', name: 'Russian' },
-    { code: 'pl', name: 'Polish' },
-    { code: 'de', name: 'German' },
-    { code: 'fr', name: 'French' },
-    { code: 'es', name: 'Spanish' },
-    { code: 'it', name: 'Italian' },
-    { code: 'pt', name: 'Portuguese' },
-    { code: 'ja', name: 'Japanese' },
-    { code: 'ko', name: 'Korean' },
-    { code: 'zh', name: 'Chinese' },
-    { code: 'ar', name: 'Arabic' }
-  ];
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-w-md mx-auto">
@@ -104,27 +87,6 @@ export const DraftForm: React.FC<DraftFormProps> = ({
             placeholder="Enter material title"
             required
           />
-        </div>
-
-        {/* Source Language */}
-        <div>
-          <label htmlFor="sourceLanguage" className="block text-sm font-medium text-gray-700 mb-2">
-            Source Language *
-          </label>
-          <select
-            id="sourceLanguage"
-            name="sourceLanguage"
-            value={formData.sourceLanguage}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-            required
-          >
-            {languageOptions.map(lang => (
-              <option key={lang.code} value={lang.code}>
-                {lang.name} ({lang.code})
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Target Languages */}

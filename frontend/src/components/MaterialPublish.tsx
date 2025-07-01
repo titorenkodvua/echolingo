@@ -10,7 +10,7 @@ interface MaterialPublishProps {
   onCancel?: () => void;
 }
 
-export const MaterialPublish: React.FC<MaterialPublishProps> = ({ 
+export const MaterialEdit: React.FC<MaterialPublishProps> = ({ 
   material, 
   transcription,
   onPublished, 
@@ -29,6 +29,11 @@ export const MaterialPublish: React.FC<MaterialPublishProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTranscription, setShowTranscription] = useState(false);
+
+  const isPublished = material.status === 'published';
+  const isReady = material.status === 'ready';
+  const isDraft = material.status === 'draft';
+  const mode = isPublished ? 'edit' : 'publish';
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -51,7 +56,19 @@ export const MaterialPublish: React.FC<MaterialPublishProps> = ({
     setError(null);
 
     try {
-      const response = await materialsApi.publishMaterial(material.id, {
+      let response;
+      if (mode === 'edit') {
+        response = await materialsApi.update(material.id, {
+          title: formData.title,
+          description: formData.description,
+          tags: formData.tags,
+          difficultyLevel: formData.difficultyLevel,
+          category: formData.category,
+          isPublic: formData.isPublic,
+          recommendedRepetitions: formData.recommendedRepetitions
+        });
+      } else {
+        response = await materialsApi.publishMaterial(material.id, {
         title: formData.title,
         description: formData.description,
         tags: formData.tags,
@@ -60,11 +77,12 @@ export const MaterialPublish: React.FC<MaterialPublishProps> = ({
         isPublic: formData.isPublic,
         recommendedRepetitions: formData.recommendedRepetitions
       });
+      }
       
       if (response.success && response.data) {
         onPublished?.(response.data);
       } else {
-        throw new Error(response.error || 'Failed to publish material');
+        throw new Error(response.error || 'Failed to save material');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -85,14 +103,16 @@ export const MaterialPublish: React.FC<MaterialPublishProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Publish Material</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        {mode === 'edit' ? 'Edit Material' : 'Publish Material'}
+      </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Material Info */}
         <div className="bg-gray-50 rounded-md p-4">
           <h3 className="text-lg font-medium text-gray-900 mb-2">{material.title}</h3>
           <p className="text-sm text-gray-600">
-            {material.sourceLanguage} → {material.targetLanguage.join(', ')}
+            {material.language} → {material.targetLanguage.join(', ')}
           </p>
           {material.duration && (
             <p className="text-sm text-gray-600">
@@ -172,19 +192,19 @@ export const MaterialPublish: React.FC<MaterialPublishProps> = ({
         </div>
 
         {/* Tags */}
-        <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-            Tags (comma-separated)
-          </label>
-          <input
-            type="text"
-            id="tags"
-            name="tags"
-            value={formData.tags.join(', ')}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-            placeholder="e.g., business, travel, conversation"
-          />
+          <div>
+            <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+              Tags (comma-separated)
+            </label>
+            <input
+              type="text"
+              id="tags"
+              name="tags"
+              value={formData.tags.join(', ')}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              placeholder="e.g., business, travel, conversation"
+            />
         </div>
 
         {/* Settings */}
@@ -293,12 +313,12 @@ export const MaterialPublish: React.FC<MaterialPublishProps> = ({
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Publishing...
+                {mode === 'edit' ? 'Saving...' : 'Publishing...'}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Publish Material
+                {mode === 'edit' ? 'Save changes' : 'Publish Material'}
               </>
             )}
           </button>

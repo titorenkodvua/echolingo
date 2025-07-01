@@ -118,8 +118,8 @@ class DatabaseService {
         where.difficultyLevel = filters.difficultyLevel;
       }
       
-      if (filters.sourceLanguage) {
-        where.sourceLanguage = filters.sourceLanguage;
+      if (filters.language) {
+        where.language = filters.language;
       }
 
       const materials = await Material.findAll({

@@ -18,8 +18,8 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
     title: '',
     description: '',
     difficultyLevel: 'A1' as Material['difficultyLevel'],
-    sourceLanguage: transcription.sourceLanguage || 'en',
-    targetLanguage: [transcription.targetLanguage || 'en'],
+    language: '',
+    targetLanguage: [] as string[],
     tags: [] as string[],
     isPublic: true,
     category: '',
@@ -53,6 +53,10 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
     
     if (!formData.title.trim()) {
       setError('Title is required');
+      return;
+    }
+    if (!formData.targetLanguage || formData.targetLanguage.length === 0) {
+      setError('At least one target language is required');
       return;
     }
 
@@ -151,17 +155,18 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
         {/* Language Settings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="sourceLanguage" className="block text-sm font-medium text-gray-700 mb-2">
-              Source Language
+            <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
+              Language (detected)
             </label>
             <input
               type="text"
-              id="sourceLanguage"
-              name="sourceLanguage"
-              value={formData.sourceLanguage}
+              id="language"
+              name="language"
+              value={formData.language}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
               placeholder="e.g., en, es, fr"
+              readOnly
             />
           </div>
 
@@ -182,19 +187,19 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
         </div>
 
         {/* Additional Information */}
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-            Category
-          </label>
-          <input
-            type="text"
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-            placeholder="e.g., Business, Travel, Daily Life"
-          />
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+            <input
+              type="text"
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              placeholder="e.g., Business, Travel, Daily Life"
+            />
         </div>
 
         <div>

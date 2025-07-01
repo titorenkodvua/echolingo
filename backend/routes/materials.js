@@ -1,7 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const DescriptionService = require('../services/descriptionService');
-const { Material } = require('../models');
+const { Material, Transcription } = require('../models');
 const { sequelize } = require('../models');
 const upload = require('../middlewares/uploadMiddleware');
 
@@ -114,7 +114,7 @@ router.post('/', async (req, res) => {
       tags = [],
       isPublic = false,
       difficultyLevel = 'B1',
-      sourceLanguage,
+      language,
       targetLanguage = [],
       duration,
       estimatedTime,
@@ -141,9 +141,9 @@ router.post('/', async (req, res) => {
 
     // Валидация языков
     const validLanguages = ['pl', 'en', 'ru', 'de', 'fr', 'es', 'it', 'pt', 'ja', 'ko', 'zh', 'ar'];
-    if (sourceLanguage && !validLanguages.includes(sourceLanguage)) {
+    if (language && !validLanguages.includes(language)) {
       return res.status(400).json({
-        error: 'Invalid sourceLanguage. Must be a valid language code (pl, en, ru, etc.)'
+        error: 'Invalid language. Must be a valid language code (pl, en, ru, etc.)'
       });
     }
 
@@ -221,7 +221,7 @@ router.post('/', async (req, res) => {
       status: 'active', // active, archived, deleted
       playCount: 0,
       lastPlayed: null,
-      sourceLanguage: sourceLanguage,
+      language: language || null,
       targetLanguage: targetLanguage,
       duration: duration,
       estimatedTime: estimatedTime,
@@ -369,6 +369,7 @@ router.get('/', async (req, res) => {
         userId: userId,
         status: status
       },
+      include: [{ model: Transcription, as: 'transcription' }],
       order: [['updatedAt', 'DESC']]
     });
 
@@ -707,7 +708,9 @@ router.get('/:materialId', async (req, res) => {
     const { materialId } = req.params;
     const userId = req.query.userId || 'anonymous';
 
-    const material = await Material.findByPk(materialId);
+    const material = await Material.findByPk(materialId, {
+      include: [{ model: Transcription, as: 'transcription' }]
+    });
 
     if (!material) {
       return res.status(404).json({ error: 'Material not found' });
@@ -743,7 +746,7 @@ router.put('/:materialId', async (req, res) => {
       tags,
       isPublic,
       difficultyLevel,
-      sourceLanguage,
+      language,
       targetLanguage,
       duration,
       estimatedTime,
@@ -777,9 +780,9 @@ router.put('/:materialId', async (req, res) => {
 
     // Валидация языков
     const validLanguages = ['pl', 'en', 'ru', 'de', 'fr', 'es', 'it', 'pt', 'ja', 'ko', 'zh', 'ar'];
-    if (sourceLanguage !== undefined && !validLanguages.includes(sourceLanguage)) {
+    if (language !== undefined && !validLanguages.includes(language)) {
       return res.status(400).json({
-        error: 'Invalid sourceLanguage. Must be a valid language code (pl, en, ru, etc.)'
+        error: 'Invalid language. Must be a valid language code (pl, en, ru, etc.)'
       });
     }
 
@@ -826,7 +829,7 @@ router.put('/:materialId', async (req, res) => {
     if (tags !== undefined) material.tags = tags;
     if (isPublic !== undefined) material.isPublic = isPublic;
     if (difficultyLevel !== undefined) material.difficultyLevel = difficultyLevel;
-    if (sourceLanguage !== undefined) material.sourceLanguage = sourceLanguage;
+    if (language !== undefined) material.language = language;
     if (targetLanguage !== undefined) material.targetLanguage = targetLanguage;
     if (duration !== undefined) material.duration = duration;
     if (estimatedTime !== undefined) material.estimatedTime = estimatedTime;
@@ -940,15 +943,11 @@ router.post('/:materialId/play', async (req, res) => {
  *             type: object
  *             required:
  *               - title
- *               - sourceLanguage
  *               - targetLanguage
  *             properties:
  *               title:
  *                 type: string
  *                 description: Название материала
- *               sourceLanguage:
- *                 type: string
- *                 description: Исходный язык
  *               targetLanguage:
  *                 type: array
  *                 items:
@@ -976,24 +975,18 @@ router.post('/draft', async (req, res) => {
   try {
     const {
       title,
-      sourceLanguage,
       targetLanguage = [],
       userId = 'anonymous'
     } = req.body;
 
-    if (!title || !sourceLanguage || !targetLanguage || targetLanguage.length === 0) {
+    if (!title || !targetLanguage || targetLanguage.length === 0) {
       return res.status(400).json({
-        error: 'Missing required fields: title, sourceLanguage, targetLanguage'
+        error: 'Missing required fields: title, targetLanguage'
       });
     }
 
     // Валидация языков
     const validLanguages = ['pl', 'en', 'ru', 'de', 'fr', 'es', 'it', 'pt', 'ja', 'ko', 'zh', 'ar'];
-    if (!validLanguages.includes(sourceLanguage)) {
-      return res.status(400).json({
-        error: 'Invalid sourceLanguage. Must be a valid language code.'
-      });
-    }
 
     const invalidTargetLanguages = targetLanguage.filter(lang => !validLanguages.includes(lang));
     if (invalidTargetLanguages.length > 0) {
@@ -1006,7 +999,6 @@ router.post('/draft', async (req, res) => {
     const material = await Material.create({
       id: uuidv4(),
       title,
-      sourceLanguage,
       targetLanguage,
       userId,
       status: 'draft',
@@ -1088,13 +1080,23 @@ router.put('/:materialId/upload-file', upload.single('audio'), async (req, res) 
     material.status = 'processing';
     await material.save();
 
+    // --- NEW: Парсим options из formData ---
+    let options = {};
+    if (req.body.options) {
+      try {
+        options = JSON.parse(req.body.options);
+      } catch (e) {
+        console.warn('Failed to parse options:', req.body.options);
+      }
+    }
+    const language = options.language || material.language;
+
     // Запускаем транскрипцию
     const gladia = require('../services/gladiaService');
     const gladiaOptions = {
       custom_vocabulary: false,
       detect_language: true,
       enable_code_switching: false,
-      language: material.sourceLanguage,
       translation: true,
       translation_config: {
         target_languages: material.targetLanguage,
@@ -1107,13 +1109,15 @@ router.put('/:materialId/upload-file', upload.single('audio'), async (req, res) 
         type: "concise"
       },
       diarization: true,
-      sentences: true
+      sentences: true,
+      language_config: {
+        code_switching: false
+      }
     };
 
     const transcriptionResult = await gladia.transcribeAudio(req.file.path, gladiaOptions);
 
     // Создаем запись транскрипции
-    const { Transcription } = require('../models');
     const transcription = await Transcription.create({
       id: uuidv4(),
       gladiaId: transcriptionResult.id,
@@ -1121,9 +1125,6 @@ router.put('/:materialId/upload-file', upload.single('audio'), async (req, res) 
       fileName: req.file.filename,
       userId: material.userId,
       status: 'submitted',
-      sourceLanguage: material.sourceLanguage,
-      targetLanguage: material.targetLanguage[0] || 'en',
-      language: material.sourceLanguage,
       full_transcript: '',
       count_of_speakers: 1,
       translation: [],

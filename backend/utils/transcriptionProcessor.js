@@ -15,14 +15,16 @@ function processGladiaResponse(gladiaResponse) {
       hasTranslation: !!gladiaResponse.result?.translation,
       hasSentences: !!gladiaResponse.result?.sentences
     });
+    // Логируем весь ответ для отладки
+    console.log('[DEBUG] Full Gladia response:', JSON.stringify(gladiaResponse, null, 2));
     
     const result = gladiaResponse.result;
     if (!result) {
       throw new Error('No result data in Gladia response');
     }
 
-    // Определяем язык оригинала
-    const originalLanguage = result.transcription?.languages?.[0] || 'unknown';
+    // Определяем язык оригинала через универсальный парсер
+    const originalLanguage = extractLanguage(gladiaResponse);
     
     // Получаем полный текст
     const fullTranscript = result.transcription?.full_transcript || '';
@@ -433,6 +435,41 @@ function addTranslations(transcriptionData, translations) {
   }
   
   return transcriptionData;
+}
+
+function extractLanguage(gladiaResponse) {
+  const result = gladiaResponse?.result;
+  const t = result?.transcription;
+  if (t?.languages && Array.isArray(t.languages) && t.languages.length > 0) {
+    console.log('[DEBUG] Язык найден в transcription.languages:', t.languages[0]);
+    return t.languages[0];
+  }
+  if (t?.language) {
+    console.log('[DEBUG] Язык найден в transcription.language:', t.language);
+    return t.language;
+  }
+  if (t?.utterances && t.utterances.length > 0 && t.utterances[0].language) {
+    console.log('[DEBUG] Язык найден в utterances[0].language:', t.utterances[0].language);
+    return t.utterances[0].language;
+  }
+  if (t?.sentences && t.sentences.length > 0 && t.sentences[0].language) {
+    console.log('[DEBUG] Язык найден в sentences[0].language:', t.sentences[0].language);
+    return t.sentences[0].language;
+  }
+  if (result?.language) {
+    console.log('[DEBUG] Язык найден в result.language:', result.language);
+    return result.language;
+  }
+  if (result?.detected_language) {
+    console.log('[DEBUG] Язык найден в result.detected_language:', result.detected_language);
+    return result.detected_language;
+  }
+  if (gladiaResponse?.language) {
+    console.log('[DEBUG] Язык найден в gladiaResponse.language:', gladiaResponse.language);
+    return gladiaResponse.language;
+  }
+  console.log('[DEBUG] Язык не найден, возвращаю unknown');
+  return 'unknown';
 }
 
 module.exports = {

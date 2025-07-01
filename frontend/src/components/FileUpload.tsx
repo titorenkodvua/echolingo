@@ -51,7 +51,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTranscriptionComplete 
     }
 
     try {
-      const result = await startTranscription(file);
+      const result = await startTranscription(file, 'en');
       if (onTranscriptionComplete && result) {
         onTranscriptionComplete(result);
       }

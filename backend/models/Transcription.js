@@ -22,11 +22,6 @@ const defineTranscription = (sequelize) => {
       defaultValue: 'pending'
     },
     // Основные поля транскрипции согласно data.js
-    language: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      comment: 'Язык оригинала'
-    },
     full_transcript: {
       type: DataTypes.TEXT,
       allowNull: false,
@@ -50,14 +45,6 @@ const defineTranscription = (sequelize) => {
       comment: 'Массив предложений с переводами и фразами'
     },
     // Дополнительные поля для совместимости
-    sourceLanguage: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    targetLanguage: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
     duration: {
       type: DataTypes.FLOAT,
       allowNull: true

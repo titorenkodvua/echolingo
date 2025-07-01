@@ -40,9 +40,10 @@ const defineMaterial = (sequelize) => {
       type: DataTypes.ENUM('A1', 'A2', 'B1', 'B2', 'C1', 'C2'),
       defaultValue: 'B1'
     },
-    sourceLanguage: {
+    language: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
+      comment: 'Язык оригинала'
     },
     targetLanguage: {
       type: DataTypes.JSON,

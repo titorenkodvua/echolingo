@@ -13,11 +13,13 @@ const api = axios.create({
 // Transcription API
 export const transcriptionApi = {
   // Start transcription
-  start: async (file: File, userId: string): Promise<ApiResponse<{ transcriptionId: string; predictionId: string }>> => {
+  start: async (file: File, userId: string, sourceLanguage?: string): Promise<ApiResponse<{ transcriptionId: string; predictionId: string }>> => {
     const formData = new FormData();
     formData.append('audio', file);
     formData.append('userId', userId);
-
+    if (sourceLanguage) {
+      formData.append('options', JSON.stringify({ language: sourceLanguage }));
+    }
     const response = await api.post('/transcription/upload-and-transcribe', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -48,16 +50,18 @@ export const transcriptionApi = {
 // Materials API
 export const materialsApi = {
   // Create draft material
-  createDraft: async (draftData: { title: string; sourceLanguage: string; targetLanguage: string[]; userId?: string }): Promise<ApiResponse<Material>> => {
+  createDraft: async (draftData: { title: string; targetLanguage: string[]; userId?: string; language?: string }): Promise<ApiResponse<Material>> => {
     const response = await api.post('/materials/draft', draftData);
     return response.data;
   },
 
   // Upload file to material
-  uploadFile: async (materialId: string, file: File): Promise<ApiResponse<{ materialId: string; predictionId: string; status: string }>> => {
+  uploadFile: async (materialId: string, file: File, language?: string): Promise<ApiResponse<{ materialId: string; predictionId: string; status: string }>> => {
     const formData = new FormData();
     formData.append('audio', file);
-
+    if (language) {
+      formData.append('options', JSON.stringify({ language }));
+    }
     const response = await api.put(`/materials/${materialId}/upload-file`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

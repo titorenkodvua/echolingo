@@ -8,7 +8,7 @@ export const useTranscription = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const startTranscription = useCallback(async (file: File, userId: string = 'anonymous') => {
+  const startTranscription = useCallback(async (file: File, language: string = 'en', userId: string = 'anonymous') => {
     try {
       setIsProcessing(true);
       setError(null);
@@ -20,8 +20,8 @@ export const useTranscription = () => {
         status: 'uploading'
       });
 
-      // Start transcription
-      const response = await transcriptionApi.start(file, userId);
+      // Start transcription with language
+      const response = await transcriptionApi.start(file, userId, language);
       
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to start transcription');

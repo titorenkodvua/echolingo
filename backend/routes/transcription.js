@@ -194,6 +194,7 @@ router.post('/start', async (req, res) => {
       display_mode: false,
       punctuation_enhanced: false,
       language_config: {
+        languages: options.language ? [options.language] : [],
         code_switching: false
       }
     };
@@ -209,8 +210,6 @@ router.post('/start', async (req, res) => {
       originalFileName: fileName,
       userId: userId,
       status: 'submitted',
-      sourceLanguage: options.language || 'auto',
-      targetLanguage: options.targetLanguages?.[0] || 'en',
       language: options.language || 'en',
       full_transcript: '',
       count_of_speakers: 1,
@@ -339,7 +338,6 @@ router.get('/status/:predictionId', async (req, res) => {
       
       if (internalStatus === 'completed' && status.result) {
         console.log(`🎯 [DEBUG] Processing completed transcription result`);
-        
         // Обрабатываем результат через transcriptionProcessor
         const processedData = transcriptionProcessor.processGladiaResponse({
           id: status.id,
@@ -379,38 +377,60 @@ router.get('/status/:predictionId', async (req, res) => {
           hasDuration: !!updateData.duration,
           hasSummary: !!updateData.summary
         });
-      }
-      
-      const updatedTranscription = await transcription.update(updateData);
-      console.log(`✅ [DEBUG] Transcription updated successfully:`, {
-        id: updatedTranscription.id,
-        status: updatedTranscription.status,
-        hasSentences: !!updatedTranscription.sentences,
-        hasTranslation: !!updatedTranscription.translation,
-        hasFullTranscript: !!updatedTranscription.full_transcript
-      });
-      
-      // Обновляем статус связанного материала на 'ready'
-      if (internalStatus === 'completed') {
+
+        const updatedTranscription = await transcription.update(updateData);
+        console.log(`✅ [DEBUG] Transcription updated successfully:`, {
+          id: updatedTranscription.id,
+          status: updatedTranscription.status,
+          hasSentences: !!updatedTranscription.sentences,
+          hasTranslation: !!updatedTranscription.translation,
+          hasFullTranscript: !!updatedTranscription.full_transcript
+        });
+
+        // Обновляем статус связанного материала на 'ready' ТОЛЬКО здесь
         try {
           console.log(`🔍 [DEBUG] Looking for material with transcriptionId: ${transcription.id}`);
           const material = await Material.findOne({
             where: { transcriptionId: transcription.id }
           });
-          
           console.log(`📊 [DEBUG] Found material:`, material ? {
             id: material.id,
             status: material.status,
             transcriptionId: material.transcriptionId
           } : 'NOT FOUND');
-          
-          if (material && material.status === 'processing') {
-            console.log(`🔄 [DEBUG] Updating material status from 'processing' to 'ready'`);
-            material.status = 'ready';
-            await material.save();
-            console.log(`✅ [DEBUG] Material status updated to 'ready':`, material.id);
-          } else if (material) {
-            console.log(`⚠️ [DEBUG] Material found but status is not 'processing': ${material.status}`);
+          if (material) {
+            let updated = false;
+            // Обновление статуса и языка
+            if (material.status === 'processing') {
+              material.status = 'ready';
+              updated = true;
+            }
+            if (material.language !== processedData.language) {
+              material.language = processedData.language || 'unknown';
+              updated = true;
+            }
+            // Авто-заполнение description из summary при каждом парсинге
+            if (
+              (!material.description || material.description.trim() === '') &&
+              updateData.summary
+            ) {
+              material.description = updateData.summary;
+              updated = true;
+              console.log('[DEBUG] Material description auto-filled from transcription summary');
+            }
+            // Авто-заполнение duration при каждом парсинге
+            if (
+              (!material.duration || material.duration === 0) &&
+              updateData.duration
+            ) {
+              material.duration = updateData.duration;
+              updated = true;
+              console.log('[DEBUG] Material duration auto-filled from transcription duration');
+            }
+            if (updated) {
+              await material.save();
+              console.log(`✅ [DEBUG] Material updated:`, { id: material.id, status: material.status, language: material.language, description: material.description });
+            }
           } else {
             console.log(`❌ [DEBUG] No material found with transcriptionId: ${transcription.id}`);
           }
@@ -418,7 +438,8 @@ router.get('/status/:predictionId', async (req, res) => {
           console.error('❌ [DEBUG] Failed to update material status:', materialError);
         }
       } else {
-        console.log(`⏭️ [DEBUG] Not updating material status - transcription status is: ${internalStatus}`);
+        // Если не completed или нет status.result, просто обновляем статус
+        await transcription.update(updateData);
       }
     } else {
       console.log(`⏭️ [DEBUG] No update needed - status unchanged or already has data`);
@@ -554,7 +575,7 @@ router.get('/:transcriptionId', async (req, res) => {
         id: transcription.id,
         status: transcription.status,
         originalFileName: transcription.originalFileName,
-        sourceLanguage: transcription.sourceLanguage,
+        sourceLanguage: transcription.language,
         targetLanguage: transcription.targetLanguage,
         language: transcription.language,
         full_transcript: transcription.full_transcript,
@@ -1066,6 +1087,7 @@ router.post('/upload-and-transcribe', upload.single('audio'), async (req, res) =
       display_mode: false,
       punctuation_enhanced: false,
       language_config: {
+        languages: options.language ? [options.language] : [],
         code_switching: false
       }
     };
@@ -1082,8 +1104,6 @@ router.post('/upload-and-transcribe', upload.single('audio'), async (req, res) =
       fileName: req.file.filename,
       userId: userId,
       status: 'submitted',
-      sourceLanguage: options.language || 'auto',
-      targetLanguage: options.targetLanguages?.[0] || 'en',
       language: options.language || 'en',
       full_transcript: '',
       count_of_speakers: 1,

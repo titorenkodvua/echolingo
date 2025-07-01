@@ -67,7 +67,7 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
       });
 
       // Upload file to material
-      const response = await materialsApi.uploadFile(material.id, file);
+      const response = await materialsApi.uploadFile(material.id, file, material.language);
       
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to upload file');
@@ -253,7 +253,7 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
           <div className="bg-gray-50 rounded-md p-3 text-left">
             <p className="text-sm font-medium text-gray-900">Material: {material.title}</p>
             <p className="text-xs text-gray-600">
-              {material.sourceLanguage} → {material.targetLanguage.join(', ')}
+              {material.language} → {material.targetLanguage.join(', ')}
             </p>
           </div>
         </div>
