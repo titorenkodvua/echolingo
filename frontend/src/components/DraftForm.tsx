@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { materialsApi } from '../utils/api';
 import type { Material } from '../types';
 
@@ -141,8 +141,8 @@ export const DraftForm: React.FC<DraftFormProps> = ({
               </>
             ) : (
               <>
-                <Save className="w-4 h-4 mr-2" />
-                Create Draft
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Next
               </>
             )}
           </button>
