@@ -1,0 +1,87 @@
+{
+  "id": "94f938a7-be47-4fc0-a6c7-94c54c417baa",
+  "language": "en",
+  "full_transcript": "Hello, this is a test audio file for transcription. I'm speaking in English to demonstrate the transcription process.",
+  "count_of_speakers": 1,
+  "translation": [
+    {
+      "id": "trans-1",
+      "language": "ru",
+      "text": "Привет, это тестовый аудиофайл для транскрипции. Я говорю по-английски, чтобы продемонстрировать процесс транскрипции."
+    }
+  ],
+  "sentences": [
+    {
+      "id": "sent-1",
+      "sentence": "Hello, this is a test audio file for transcription.",
+      "speaker": 0,
+      "start": 0,
+      "end": 3.5,
+      "translation": [
+        {
+          "id": "sent-1-tr-1",
+          "language": "ru",
+          "text": "Привет, это тестовый аудиофайл для транскрипции."
+        }
+      ],
+      "utterances": [
+        {
+          "id": "sent-1-utt-1",
+          "is_segment_start": true,
+          "speaker": 0,
+          "text": "Hello, this is a test audio file for transcription.",
+          "start": 0,
+          "end": 3.5,
+          "confidence": 0.99,
+          "translation": [
+            {
+              "id": "sent-1-utt-1-tr-1",
+              "language": "ru",
+              "text": "Привет, это тестовый аудиофайл для транскрипции."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sent-2",
+      "sentence": "I'm speaking in English to demonstrate the transcription process.",
+      "speaker": 0,
+      "start": 3.6,
+      "end": 7.2,
+      "translation": [
+        {
+          "id": "sent-2-tr-1",
+          "language": "ru",
+          "text": "Я говорю по-английски, чтобы продемонстрировать процесс транскрипции."
+        }
+      ],
+      "utterances": [
+        {
+          "id": "sent-2-utt-2",
+          "is_segment_start": false,
+          "speaker": 0,
+          "text": "I'm speaking in English to demonstrate the transcription process.",
+          "start": 3.6,
+          "end": 7.2,
+          "confidence": 0.97,
+          "translation": [
+            {
+              "id": "sent-2-utt-2-tr-1",
+              "language": "ru",
+              "text": "Я говорю по-английски, чтобы продемонстрировать процесс транскрипции."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "gladia_id": "94f938a7-be47-4fc0-a6c7-94c54c417baa",
+    "created_at": "2025-06-28T15:10:00Z",
+    "completed_at": "2025-06-28T15:10:05Z",
+    "audio_duration": 7.2,
+    "transcription_time": 5,
+    "summarization": "This is a test audio file demonstrating transcription capabilities."
+  }
+}

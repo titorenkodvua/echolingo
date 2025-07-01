@@ -1,0 +1,19 @@
+{
+  "fileName": "1751056452334-0c835ee4.mp3",
+  "userId": "string",
+  "options": {
+    "language": "auto",
+    "translation": true,
+    "targetLanguages": ["ru", "en"],
+    "diarization": {
+      "enable": true,
+      "enhanced": false
+    },
+    "summarization": {
+      "enable": true,
+      "type": "concise"
+    },
+    "sentences": true,
+    "detect_language": true
+  }
+} 

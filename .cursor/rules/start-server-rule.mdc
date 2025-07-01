@@ -1,0 +1,10 @@
+---
+description: Use this rule if you whant to start the server
+globs: 
+alwaysApply: false
+---
+запуск сервера всега делай только полной коммандой 
+cd /Users/dmytro/my-projects/echolingo/backend && node server.js
+Или
+cd /Users/dmytro/my-projects/echolingo/backend && npm run dev
+т.е. когда в одной строке указан и переход в папку и запуск 

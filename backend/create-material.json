@@ -1,0 +1,22 @@
+{
+  "title": "Диалог о погоде и наводнении в Польше",
+  "description": "Разговор двух людей о дожде, понедельниках и наводнении в Польше. Один из собеседников изучает польский язык.",
+  "audioFileName": "1751055301432-be919231.mp3",
+  "transcriptionId": "9f5811f5-16ce-4101-82d4-96491396104a",
+  "userId": "string",
+  "tags": ["польский", "диалог", "погода", "наводнение", "изучение языка"],
+  "isPublic": true,
+  "difficultyLevel": "B1",
+  "sourceLanguage": "pl",
+  "targetLanguage": "ru",
+  "duration": 58.697,
+  "estimatedTime": 5,
+  "averageRating": 4.5,
+  "category": "conversation",
+  "author": "Gladia AI",
+  "recommendedRepetitions": {
+    "easy": 2,
+    "medium": 3,
+    "hard": 5
+  }
+} 
