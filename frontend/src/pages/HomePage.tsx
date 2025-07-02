@@ -17,6 +17,7 @@ interface PipelineState {
 export const HomePage: React.FC = () => {
   const [pipeline, setPipeline] = useState<PipelineState | null>(null);
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [visibleMaterials, setVisibleMaterials] = useState<boolean[]>([]);
   const [drafts, setDrafts] = useState<Material[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -28,6 +29,8 @@ export const HomePage: React.FC = () => {
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
   // Load materials and drafts
   const loadData = async () => {
@@ -39,7 +42,22 @@ export const HomePage: React.FC = () => {
       ]);
 
       if (materialsResponse.success && materialsResponse.data) {
-        setMaterials(materialsResponse.data.materials || []);
+        const mats = Array.isArray(materialsResponse.data.materials) ? materialsResponse.data.materials : [];
+        setMaterials(mats);
+        setVisibleMaterials([]);
+        setTimeout(() => {
+          const arr = new Array(mats.length).fill(false);
+          setVisibleMaterials(arr);
+          mats.forEach((_, i) => {
+            setTimeout(() => {
+              setVisibleMaterials(prev => {
+                const next = [...prev];
+                next[i] = true;
+                return next;
+              });
+            }, i * 100);
+          });
+        }, 200);
       }
 
       if (draftsResponse.success && draftsResponse.data) {
@@ -55,6 +73,25 @@ export const HomePage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (materials.length > 0) {
+      setVisibleMaterials([]);
+      setTimeout(() => {
+        const arr = new Array(materials.length).fill(false);
+        setVisibleMaterials(arr);
+        materials.forEach((_, i) => {
+          setTimeout(() => {
+            setVisibleMaterials(prev => {
+              const next = [...prev];
+              next[i] = true;
+              return next;
+            });
+          }, i * 100);
+        });
+      }, 200);
+    }
+  }, [materials]);
 
   useEffect(() => {
     if (pipeline && pipeline.step === 'edit') {
@@ -103,6 +140,22 @@ export const HomePage: React.FC = () => {
       document.body.classList.remove('overflow-hidden');
     };
   }, [showCreateForm]);
+
+  useEffect(() => {
+    if (pipeline && pipeline.step === 'complete') {
+      setIsCompleteModalOpen(true);
+      setShowCompleteModal(false);
+      setTimeout(() => setShowCompleteModal(true), 0);
+      document.body.classList.add('overflow-hidden');
+    } else {
+      setShowCompleteModal(false);
+      setTimeout(() => setIsCompleteModalOpen(false), 250);
+      document.body.classList.remove('overflow-hidden');
+    }
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [pipeline]);
 
   // Pipeline handlers
   const handleDraftCreated = (material: Material) => {
@@ -198,6 +251,14 @@ export const HomePage: React.FC = () => {
     }, 250);
   };
 
+  const handleCloseCompleteModal = () => {
+    setShowCompleteModal(false);
+    setTimeout(() => {
+      setIsCompleteModalOpen(false);
+      setPipeline(null);
+    }, 250);
+  };
+
   const renderPipelineStep = () => {
     if (!pipeline) return null;
 
@@ -230,21 +291,7 @@ export const HomePage: React.FC = () => {
         );
 
       case 'complete':
-        return (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Material Published Successfully!
-              </h3>
-              <p className="text-sm text-gray-600">
-                Your material &quot;{pipeline.material?.title}&quot; is now available for learning.
-              </p>
-            </div>
-          </div>
-        );
+        return null;
 
       case 'edit':
         return (
@@ -276,7 +323,7 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className={`transition-all duration-300 ${((pipeline && (pipeline.step === 'edit' || pipeline.step === 'upload')) || showCreateForm) ? 'filter blur-md pointer-events-none select-none' : ''}`} id="main-content">
+      <div className={`transition-all duration-300 ${((pipeline && (pipeline.step === 'edit' || pipeline.step === 'upload' || pipeline.step === 'complete')) || showCreateForm) ? 'filter blur-md pointer-events-none select-none' : ''}`} id="main-content">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-8">
@@ -406,10 +453,11 @@ export const HomePage: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {materials.map((material) => (
+                  {materials.map((material, i) => (
                     <div
                       key={material.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                      className={`border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-all duration-500 ${visibleMaterials[i] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                      style={{ transitionDelay: `${i * 80}ms` }}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -507,6 +555,37 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Material Published Successfully Modal */}
+      {isCompleteModalOpen && pipeline && pipeline.step === 'complete' && (
+        <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${showCompleteModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className={`bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative transform transition-transform duration-300 ${showCompleteModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Material Published Successfully!
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Your material &quot;{pipeline.material?.title}&quot; is now available for learning.
+              </p>
+              <button
+                onClick={handleCloseCompleteModal}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                Close
+              </button>
+            </div>
+            <button
+              onClick={handleCloseCompleteModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+              title="Close"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
       {pipeline && pipeline.step === 'edit' && renderPipelineStep()}
       {/* Модальное окно подтверждения удаления */}
       {showDeleteModal && materialToDelete && (
@@ -533,4 +612,4 @@ export const HomePage: React.FC = () => {
       )}
     </div>
   );
-}; 
+};
