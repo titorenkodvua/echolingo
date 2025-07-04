@@ -72,6 +72,9 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Запуск cron-задачи для автоматической очистки неоконченных материалов
+require('./cron/cleanupJob');
+
 // Инициализация и запуск сервера
 const startServer = async () => {
   try {

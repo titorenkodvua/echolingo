@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Save, Loader2, Eye, EyeOff } from 'lucide-react';
 import { materialsApi } from '../utils/api';
 import type { Material, Transcription } from '../types';
@@ -12,7 +12,7 @@ interface MaterialPublishProps {
 
 export const MaterialEdit: React.FC<MaterialPublishProps> = ({ 
   material, 
-  transcription,
+  transcription: initialTranscription,
   onPublished, 
   onCancel 
 }) => {
@@ -31,11 +31,29 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
   const [showTranscription, setShowTranscription] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const [transcription, setTranscription] = useState<Transcription | undefined>(initialTranscription);
 
   const isPublished = material.status === 'published';
   const isReady = material.status === 'ready';
   const isDraft = material.status === 'draft';
   const mode = isPublished ? 'edit' : 'publish';
+
+  // Если transcription не передан, пробуем загрузить его по material.transcriptionId
+  useEffect(() => {
+    let ignore = false;
+    async function fetchTranscription() {
+      if (!initialTranscription && material.transcriptionId) {
+        try {
+          const resp = await materialsApi.getById(material.id);
+          if (resp.success && resp.data && resp.data.transcription && !ignore) {
+            setTranscription(resp.data.transcription);
+          }
+        } catch {}
+      }
+    }
+    fetchTranscription();
+    return () => { ignore = true; };
+  }, [material.id, material.transcriptionId, initialTranscription]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -125,10 +143,10 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
+    <div className="rounded-lg p-6 max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Material Info */}
-        <div className="bg-gray-50 rounded-md p-4">
+        <div className="bg-base-200 rounded-md p-4">
           {editingTitle ? (
             <input
               ref={titleInputRef}
@@ -137,23 +155,23 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               onChange={handleTitleChange}
               onBlur={handleTitleBlur}
               onKeyDown={handleTitleKeyDown}
-              className="text-xl font-medium text-gray-900 bg-gray-50 border-b border-primary-300 focus:outline-none focus:border-primary-600 w-full mb-2"
+              className="text-xl font-medium text-base-content bg-base-200 border-b border-primary/60 focus:outline-none focus:border-primary-focus w-full mb-2"
               maxLength={120}
             />
           ) : (
             <h3
-              className="text-xl font-medium text-gray-900 mb-2 cursor-pointer hover:underline"
+              className="text-xl font-medium text-base-content mb-2 cursor-pointer hover:underline"
               onClick={handleTitleClick}
               title="Click to edit title"
             >
               {formData.title || 'Untitled'}
             </h3>
           )}
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-base-content/70">
             {material.language} → {material.targetLanguage.join(', ')}
           </p>
           {material.duration && (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-base-content/70">
               Duration: {Math.round(material.duration / 60)} minutes
             </p>
           )}
@@ -161,7 +179,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="description" className="block text-sm font-medium text-base-content mb-2">
             Description
           </label>
           <textarea
@@ -170,7 +188,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
             value={formData.description}
             onChange={handleInputChange}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
             placeholder="Enter material description"
           />
         </div>
@@ -178,7 +196,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
         {/* Difficulty and Category */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="difficultyLevel" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="difficultyLevel" className="block text-sm font-medium text-base-content mb-2">
               Difficulty Level
             </label>
             <select
@@ -186,7 +204,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               name="difficultyLevel"
               value={formData.difficultyLevel}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
             >
               {difficultyLevels.map(level => (
                 <option key={level.value} value={level.value}>
@@ -197,7 +215,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
           </div>
 
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="category" className="block text-sm font-medium text-base-content mb-2">
               Category
             </label>
             <input
@@ -206,7 +224,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               name="category"
               value={formData.category}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
               placeholder="e.g., Business, Travel, Daily Life"
             />
           </div>
@@ -214,7 +232,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
 
         {/* Tags */}
           <div>
-            <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="tags" className="block text-sm font-medium text-base-content mb-2">
               Tags (comma-separated)
             </label>
             <input
@@ -223,7 +241,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               name="tags"
               value={formData.tags.join(', ')}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
               placeholder="e.g., business, travel, conversation"
             />
         </div>
@@ -231,7 +249,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
         {/* Settings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="recommendedRepetitions" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="recommendedRepetitions" className="block text-sm font-medium text-base-content mb-2">
               Recommended Repetitions
             </label>
             <input
@@ -242,7 +260,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               onChange={handleInputChange}
               min="1"
               max="10"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
             />
           </div>
 
@@ -253,9 +271,9 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               name="isPublic"
               checked={formData.isPublic}
               onChange={handleInputChange}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              className="checkbox checkbox-primary"
             />
-            <label htmlFor="isPublic" className="ml-2 block text-sm text-gray-900">
+            <label htmlFor="isPublic" className="ml-2 block text-sm text-base-content">
               Make this material public
             </label>
           </div>
@@ -263,13 +281,13 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
 
         {/* Transcription Preview */}
         {transcription && (
-          <div className="bg-gray-50 rounded-md p-4">
+          <div className="bg-base-200 rounded-md p-4">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-medium text-gray-700">Transcription Preview</h3>
+              <h3 className="text-sm font-medium text-base-content">Transcription Preview</h3>
               <button
                 type="button"
                 onClick={() => setShowTranscription(!showTranscription)}
-                className="inline-flex items-center text-sm text-primary-600 hover:text-primary-700"
+                className="inline-flex items-center text-sm text-primary hover:text-primary-focus"
               >
                 {showTranscription ? (
                   <>
@@ -287,10 +305,10 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
             
             {showTranscription ? (
               <div className="space-y-2">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-base-content/70">
                   {transcription.full_transcript?.substring(0, 300)}...
                 </p>
-                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                <div className="flex items-center space-x-4 text-xs text-base-content/60">
                   <span>{transcription.sentences?.length || 0} sentences</span>
                   <span>{transcription.count_of_speakers || 0} speakers</span>
                   {transcription.duration && (
@@ -299,7 +317,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-base-content/70">
                 Click &quot;Show&quot; to preview the transcription
               </p>
             )}
@@ -308,8 +326,8 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
 
         {/* Error Display */}
         {error && (
-          <div className="bg-error-50 border border-error-200 rounded-md p-3">
-            <p className="text-sm text-error-700">{error}</p>
+          <div className="bg-error/10 border border-error rounded-md p-3">
+            <p className="text-sm text-error">{error}</p>
           </div>
         )}
 
@@ -319,17 +337,16 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="btn"
               disabled={isSubmitting}
             >
               Cancel
             </button>
           )}
-          
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-primary"
           >
             {isSubmitting ? (
               <>

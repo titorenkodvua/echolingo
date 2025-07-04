@@ -6,12 +6,31 @@ import { MaterialEdit } from '../components/MaterialPublish';
 import { materialsApi } from '../utils/api';
 import type { Material, Transcription } from '../types';
 
-type PipelineStep = 'draft' | 'upload' | 'publish' | 'complete' | 'edit';
+type PipelineStep = 'draft' | 'upload' | 'edit';
 
 interface PipelineState {
   step: PipelineStep;
   material?: Material;
   transcription?: Transcription;
+}
+
+// Хук для определения текущей темы
+function useTheme(): 'light' | 'dark' {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof document !== 'undefined') {
+      return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
+    }
+    return 'light';
+  });
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const t = document.documentElement.getAttribute('data-theme');
+      if (t === 'dark' || t === 'light') setTheme(t);
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
+  return theme;
 }
 
 export const HomePage: React.FC = () => {
@@ -29,8 +48,7 @@ export const HomePage: React.FC = () => {
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const theme = useTheme();
 
   // Load materials and drafts
   const loadData = async () => {
@@ -141,48 +159,27 @@ export const HomePage: React.FC = () => {
     };
   }, [showCreateForm]);
 
-  useEffect(() => {
-    if (pipeline && pipeline.step === 'complete') {
-      setIsCompleteModalOpen(true);
-      setShowCompleteModal(false);
-      setTimeout(() => setShowCompleteModal(true), 0);
-      document.body.classList.add('overflow-hidden');
-    } else {
-      setShowCompleteModal(false);
-      setTimeout(() => setIsCompleteModalOpen(false), 250);
-      document.body.classList.remove('overflow-hidden');
-    }
-    return () => {
-      document.body.classList.remove('overflow-hidden');
-    };
-  }, [pipeline]);
-
   // Pipeline handlers
   const handleDraftCreated = (material: Material) => {
     setPipeline({ step: 'upload', material });
     setDrafts(prev => [material, ...prev]);
   };
 
-  const handleUploadComplete = (material: Material) => {
-    setPipeline({ step: 'publish', material });
+  const handleUploadComplete = async (material: Material) => {
+    let transcription: Transcription | undefined = undefined;
+    if (material.transcriptionId) {
+      const resp = await materialsApi.getById(material.id);
+      if (resp.success && resp.data && resp.data.transcription) {
+        transcription = resp.data.transcription;
+      }
+    }
+    setPipeline({ step: 'edit', material, transcription });
   };
 
   const handlePublished = async (material: Material) => {
-    setPipeline({ step: 'complete', material });
-    try {
-      const response = await materialsApi.getById(material.id);
-      if (response.success && response.data) {
-        setMaterials(prev => prev.map(m => m.id === material.id ? response.data as Material : m));
-      } else {
-        setMaterials(prev => prev.map(m => m.id === material.id ? material : m));
-      }
-    } catch {
-      setMaterials(prev => prev.map(m => m.id === material.id ? material : m));
-    }
+    setPipeline(null);
     setDrafts(prev => prev.filter(d => d.id !== material.id));
-    setTimeout(() => {
-      setPipeline(null);
-    }, 2000);
+    await loadData();
   };
 
   const handleCancelPipeline = () => {
@@ -190,11 +187,7 @@ export const HomePage: React.FC = () => {
   };
 
   const handleContinueDraft = (material: Material) => {
-    if (material.status === 'draft') {
-      setPipeline({ step: 'upload', material });
-    } else if (material.status === 'ready') {
-      setPipeline({ step: 'publish', material });
-    }
+    setPipeline({ step: 'edit', material });
   };
 
   const handleDeleteDraft = async (materialId: string) => {
@@ -251,14 +244,6 @@ export const HomePage: React.FC = () => {
     }, 250);
   };
 
-  const handleCloseCompleteModal = () => {
-    setShowCompleteModal(false);
-    setTimeout(() => {
-      setIsCompleteModalOpen(false);
-      setPipeline(null);
-    }, 250);
-  };
-
   const renderPipelineStep = () => {
     if (!pipeline) return null;
 
@@ -277,27 +262,11 @@ export const HomePage: React.FC = () => {
       case 'upload':
         return null;
 
-      case 'publish':
-        return (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Publish Material</h2>
-            <MaterialEdit
-              material={pipeline.material!}
-              transcription={pipeline.transcription}
-              onPublished={handlePublished}
-              onCancel={handleCancelPipeline}
-            />
-          </div>
-        );
-
-      case 'complete':
-        return null;
-
       case 'edit':
         return (
           isModalOpen && (
             <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${showModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-              <div className={`bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full relative transform transition-transform duration-300 ${showModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
+              <div className={`bg-base-100 rounded-lg shadow-lg max-w-2xl w-full relative transform transition-transform duration-300 ${showModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
                 <MaterialEdit
                   material={pipeline.material!}
                   transcription={pipeline.transcription}
@@ -321,118 +290,51 @@ export const HomePage: React.FC = () => {
     }
   };
 
+  // Фильтруем опубликованные материалы (draft не показываем)
+  const publishedMaterials = materials.filter(m => m.status !== 'draft');
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className={`transition-all duration-300 ${((pipeline && (pipeline.step === 'edit' || pipeline.step === 'upload' || pipeline.step === 'complete')) || showCreateForm) ? 'filter blur-md pointer-events-none select-none' : ''}`} id="main-content">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-base-200 py-8">
+      <div className={`transition-all duration-300 ${((pipeline && (pipeline.step === 'edit' || pipeline.step === 'upload')) || showCreateForm) ? 'filter blur-md pointer-events-none select-none' : ''}`} id="main-content">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Echolingo
-            </h1>
-            <p className="text-lg text-gray-600">
+            <div className="flex items-center justify-center mb-4">
+              <img
+                src="/echolingo_logo.png"
+                alt="EchoLingo Logo"
+                className="mr-3"
+                style={{ height: 48 }}
+              />
+              <h1 className="text-4xl font-bold text-base-content font-montserrat m-0 p-0">
+                EchoLingo
+              </h1>
+            </div>
+            <p className="text-lg text-base-content/70">
               Create language learning materials with automatic transcription
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Pipeline */}
-            <div className="space-y-6">
-              {/* Create New Material Button */}
-              {!pipeline && !showCreateForm && (
-                <div className="bg-white rounded-lg shadow-md p-6">
+          {/* Published Materials */}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-base-content">
+                Published Materials
+              </h2>
+              <div className="flex items-center gap-2">
+                {!pipeline && !showCreateForm && (
                   <button
                     onClick={() => setShowCreateForm(true)}
-                    className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    className="p-2 text-primary hover:text-primary-focus"
+                    title="Create New Material"
                   >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Create New Material
+                    <Plus className="w-5 h-5" />
                   </button>
-                </div>
-              )}
-
-              {/* Draft Modal */}
-              {isDraftModalOpen && !pipeline && (
-                <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${showDraftModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                  <div className={`bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative transform transition-transform duration-300 ${showDraftModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
-                    <DraftForm
-                      onDraftCreated={(material) => {
-                        handleDraftCreated(material);
-                        setShowCreateForm(false);
-                      }}
-                      onCancel={() => setShowCreateForm(false)}
-                    />
-                    <button
-                      onClick={() => setShowCreateForm(false)}
-                      className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
-                      title="Close"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Pipeline Steps */}
-              {pipeline && renderPipelineStep()}
-
-              {/* Drafts List */}
-              {!pipeline && drafts.length > 0 && (
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Drafts</h2>
-                  <div className="space-y-3">
-                    {drafts.map((draft) => (
-                      <div
-                        key={draft.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-medium text-gray-900 mb-1">
-                              {draft.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 mb-2">
-                              {draft.language} → {draft.targetLanguage.join(', ')}
-                            </p>
-                            <div className="flex items-center space-x-2">
-                              {getStatusBadge(draft.status)}
-                              <span className="text-xs text-gray-500">
-                                {new Date(draft.updatedAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleContinueDraft(draft)}
-                              className="inline-flex items-center p-2 text-sm text-primary-600 hover:text-primary-700"
-                            >
-                              {draft.status === 'draft' ? <Upload className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteDraft(draft.id)}
-                              className="inline-flex items-center p-2 text-sm text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Right Column - Published Materials */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Published Materials
-                </h2>
+                )}
                 <button
                   onClick={loadData}
                   disabled={isLoading}
-                  className="p-2 text-primary-600 hover:text-primary-700"
+                  className="p-2 text-primary hover:text-primary-focus"
                   title="Refresh"
                 >
                   {isLoading ? (
@@ -442,82 +344,82 @@ export const HomePage: React.FC = () => {
                   )}
                 </button>
               </div>
+            </div>
 
-              {materials.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-gray-500">No published materials yet.</p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Create your first material to get started.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {materials.map((material, i) => (
-                    <div
-                      key={material.id}
-                      className={`border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-all duration-500 ${visibleMaterials[i] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-                      style={{ transitionDelay: `${i * 80}ms` }}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-medium text-gray-900 mb-1">
-                            {material.title}
-                          </h3>
-                          <p className="text-sm text-gray-600 mb-2">
-                            {material.transcription?.full_transcript?.substring(0, 300) || '—'}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-gray-500">
-                            <span>Level: {material.difficultyLevel}</span>
-                            <span>Duration: {material.duration ? `${Math.round(material.duration / 60)}m` : 'N/A'}</span>
-                            <span>Language: {material.language} → {material.targetLanguage.join(', ')}</span>
-                          </div>
-                          {material.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {material.tags.map((tag, index) => (
-                                <span
-                                  key={index}
-                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+            {publishedMaterials.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="mx-auto h-12 w-12 text-base-content/40 mb-4" />
+                <p className="text-base-content/60">No published materials yet.</p>
+                <p className="text-sm text-base-content/40 mt-2">
+                  Create your first material to get started.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-8">
+                {publishedMaterials.map((material, i) => (
+                  <div
+                    key={material.id}
+                    className={`bg-base-100 rounded-3xl shadow-[0_6px_32px_0_rgba(0,0,0,0.04)] p-8 transition-all duration-500 hover:shadow-[0_12px_48px_0_rgba(0,0,0,0.07)] ${visibleMaterials[i] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                    style={{ transitionDelay: `${i * 80}ms` }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-medium text-base-content mb-1">
+                          {material.title}
+                        </h3>
+                        <p className="text-sm text-base-content/70 mb-2">
+                          {material.transcription?.full_transcript?.substring(0, 300) || '—'}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-base-content/60">
+                          <span>Level: {material.difficultyLevel}</span>
+                          <span>Duration: {material.duration ? `${Math.round(material.duration / 60)}m` : 'N/A'}</span>
+                          <span>Language: {material.language} → {material.targetLanguage.join(', ')}</span>
                         </div>
-                        <div className="text-right text-xs text-gray-500">
-                          <div>Created: {new Date(material.createdAt).toLocaleDateString()}</div>
-                          <div>Plays: {material.playCount}</div>
-                          <div className="flex flex-row justify-end items-center gap-2 mt-2">
-                            <button
-                              onClick={() => setPipeline({ step: 'edit', material })}
-                              className="p-2 text-primary-600 hover:text-primary-700"
-                              title="Edit"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => { setMaterialToDelete(material); setShowDeleteModal(true); }}
-                              className="p-2 text-red-600 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                        {material.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {material.tags.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                              >
+                                {tag}
+                              </span>
+                            ))}
                           </div>
+                        )}
+                      </div>
+                      <div className="text-right text-xs text-base-content/60">
+                        <div>Created: {new Date(material.createdAt).toLocaleDateString()}</div>
+                        <div>Plays: {material.playCount}</div>
+                        <div className="flex flex-row justify-end items-center gap-2 mt-2">
+                          <button
+                            onClick={() => setPipeline({ step: 'edit', material })}
+                            className="p-2 text-primary hover:text-primary-focus"
+                            title="Edit"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => { setMaterialToDelete(material); setShowDeleteModal(true); }}
+                            className="p-2 text-error hover:text-error/80"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
       {/* Модальные окна рендерим вне размываемого контейнера */}
       {isDraftModalOpen && !pipeline && (
         <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${showDraftModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          <div className={`bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative transform transition-transform duration-300 ${showDraftModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
+          <div className={`bg-base-100 rounded-lg shadow-lg max-w-md w-full relative transform transition-transform duration-300 ${showDraftModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
             <DraftForm
               onDraftCreated={(material) => {
                 handleDraftCreated(material);
@@ -527,7 +429,7 @@ export const HomePage: React.FC = () => {
             />
             <button
               onClick={() => setShowCreateForm(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+              className="absolute top-4 right-4 text-base-content/40 hover:text-base-content text-2xl font-bold focus:outline-none"
               title="Close"
             >
               ×
@@ -538,8 +440,7 @@ export const HomePage: React.FC = () => {
       {/* Upload Audio File Modal */}
       {isUploadModalOpen && pipeline && pipeline.step === 'upload' && (
         <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${showUploadModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          <div className={`bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative transform transition-transform duration-300 ${showUploadModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Audio File</h2>
+          <div className={`bg-base-100 rounded-lg shadow-lg max-w-md w-full relative transform transition-transform duration-300 ${showUploadModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
             <MaterialUpload
               material={pipeline.material!}
               onUploadComplete={handleUploadComplete}
@@ -547,38 +448,7 @@ export const HomePage: React.FC = () => {
             />
             <button
               onClick={handleCloseUploadModal}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
-              title="Close"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Material Published Successfully Modal */}
-      {isCompleteModalOpen && pipeline && pipeline.step === 'complete' && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${showCompleteModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          <div className={`bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative transform transition-transform duration-300 ${showCompleteModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Material Published Successfully!
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Your material &quot;{pipeline.material?.title}&quot; is now available for learning.
-              </p>
-              <button
-                onClick={handleCloseCompleteModal}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                Close
-              </button>
-            </div>
-            <button
-              onClick={handleCloseCompleteModal}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+              className="absolute top-4 right-4 text-base-content/40 hover:text-base-content text-2xl font-bold focus:outline-none"
               title="Close"
             >
               ×
@@ -589,20 +459,20 @@ export const HomePage: React.FC = () => {
       {pipeline && pipeline.step === 'edit' && renderPipelineStep()}
       {/* Модальное окно подтверждения удаления */}
       {showDeleteModal && materialToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Удалить материал?</h3>
-            <p className="text-gray-700 mb-6">Это действие необратимо. Вы уверены, что хотите удалить материал <span className="font-medium">"{materialToDelete.title}"</span>?</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-300 bg-opacity-60">
+          <div className="bg-base-100 rounded-lg shadow-lg max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-base-content mb-4">Удалить материал?</h3>
+            <p className="text-base-content mb-6">Это действие необратимо. Вы уверены, что хотите удалить материал <span className="font-medium">"{materialToDelete.title}"</span>?</p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => { setShowDeleteModal(false); setMaterialToDelete(null); }}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="px-4 py-2 border border-base-300 rounded-md text-sm font-medium text-base-content bg-base-100 hover:bg-base-200"
               >
                 Отмена
               </button>
               <button
                 onClick={handleDeleteMaterial}
-                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-base-100-content bg-error hover:bg-error/80"
               >
                 Удалить
               </button>

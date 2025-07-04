@@ -166,30 +166,30 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
   if (uploadProgress) {
     return (
       <div className="w-full max-w-md mx-auto">
-        <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-6">
+        <div className="rounded-lg p-6">
           <div className="flex items-center justify-center mb-4">
             {getStatusIcon()}
           </div>
           
           <div className="text-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-base-content mb-2">
               {material.title}
             </h3>
-            <p className="text-sm text-gray-600">{getStatusText()}</p>
+            <p className="text-sm text-base-content/70">{getStatusText()}</p>
           </div>
 
           {uploadProgress.status !== 'completed' && uploadProgress.status !== 'error' && (
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+            <div className="w-full bg-base-200 rounded-full h-2 mb-4">
               <div 
-                className="bg-primary-500 h-2 rounded-full transition-all duration-300"
+                className="bg-primary h-2 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress.progress}%` }}
               />
             </div>
           )}
 
           {uploadProgress.error && (
-            <div className="bg-error-50 border border-error-200 rounded-md p-3 mb-4">
-              <p className="text-sm text-error-700">{uploadProgress.error}</p>
+            <div className="bg-error/10 border border-error rounded-md p-3 mb-4">
+              <p className="text-sm text-error">{uploadProgress.error}</p>
             </div>
           )}
 
@@ -197,17 +197,16 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
             {onCancel && (
               <button
                 onClick={onCancel}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="btn"
               >
                 <X className="w-4 h-4 mr-2" />
                 Cancel
               </button>
             )}
-            
             {uploadProgress.status === 'completed' && (
               <button
                 onClick={() => onUploadComplete?.(material)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="btn btn-primary"
               >
                 Continue
               </button>
@@ -221,16 +220,13 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
   return (
     <div className="w-full max-w-md mx-auto">
       <div
-        className={`relative bg-white rounded-lg border-2 border-dashed p-6 transition-colors ${
-          dragActive 
-            ? 'border-primary-500 bg-primary-50' 
-            : 'border-gray-300 hover:border-gray-400'
-        }`}
+        className={`relative rounded-lg p-6 transition-colors`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
+        <h2 className="text-xl font-semibold text-base-content mb-6">Upload Audio File</h2>
         <input
           type="file"
           accept="audio/*"
@@ -239,20 +235,17 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
         />
         
         <div className="text-center">
-          <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Upload Audio File
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">
+          <Upload className="mx-auto h-12 w-12 text-base-content/40 mb-4" />
+          <p className="text-sm text-base-content/70 mb-4">
             Drop your audio file here or click to browse
           </p>
-          <p className="text-xs text-gray-500 mb-4">
+          <p className="text-xs text-base-content/60 mb-4">
             Supported formats: MP3, WAV, M4A, FLAC, OGG (max 50MB)
           </p>
           
-          <div className="bg-gray-50 rounded-md p-3 text-left">
-            <p className="text-sm font-medium text-gray-900">Material: {material.title}</p>
-            <p className="text-xs text-gray-600">
+          <div className="bg-base-200 rounded-md p-3 text-left">
+            <p className="text-sm font-medium text-base-content">Material: {material.title}</p>
+            <p className="text-xs text-base-content/70">
               {material.language} → {material.targetLanguage.join(', ')}
             </p>
           </div>

@@ -84,37 +84,37 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTranscriptionComplete 
   if (uploadProgress) {
     return (
       <div className="w-full max-w-md mx-auto">
-        <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-6">
+        <div className="bg-base-100 rounded-lg border-2 border-dashed border-base-300 p-6">
           <div className="flex items-center justify-center mb-4">
             {getStatusIcon()}
           </div>
           
           <div className="text-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-base-content mb-2">
               {uploadProgress.file.name}
             </h3>
-            <p className="text-sm text-gray-600">{getStatusText()}</p>
+            <p className="text-sm text-base-content/70">{getStatusText()}</p>
           </div>
 
           {uploadProgress.status !== 'completed' && (
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+            <div className="w-full bg-base-200 rounded-full h-2 mb-4">
               <div 
-                className="bg-primary-500 h-2 rounded-full transition-all duration-300"
+                className="bg-primary h-2 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress.progress}%` }}
               />
             </div>
           )}
 
           {error && (
-            <div className="bg-error-50 border border-error-200 rounded-md p-3 mb-4">
-              <p className="text-sm text-error-700">{error}</p>
+            <div className="bg-error/10 border border-error rounded-md p-3 mb-4">
+              <p className="text-sm text-error">{error}</p>
             </div>
           )}
 
           <div className="flex justify-center">
             <button
               onClick={reset}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="inline-flex items-center px-4 py-2 border border-base-300 rounded-md shadow-sm text-sm font-medium text-base-content bg-base-100 hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
               <X className="w-4 h-4 mr-2" />
               Reset
@@ -128,10 +128,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTranscriptionComplete 
   return (
     <div className="w-full max-w-md mx-auto">
       <div
-        className={`relative bg-white rounded-lg border-2 border-dashed p-6 transition-colors ${
+        className={`relative bg-base-100 rounded-lg border-2 border-dashed p-6 transition-colors ${
           dragActive 
-            ? 'border-primary-500 bg-primary-50' 
-            : 'border-gray-300 hover:border-gray-400'
+            ? 'border-primary bg-primary/10' 
+            : 'border-base-300 hover:border-base-300'
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -147,14 +147,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTranscriptionComplete 
         />
         
         <div className="text-center">
-          <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <Upload className="mx-auto h-12 w-12 text-base-content/40 mb-4" />
+          <h3 className="text-lg font-medium text-base-content mb-2">
             Upload Audio File
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-base-content/70 mb-4">
             Drop your audio file here or click to browse
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-base-content/60">
             Supported formats: MP3, WAV, M4A, FLAC, OGG (max 50MB)
           </p>
         </div>
