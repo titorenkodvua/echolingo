@@ -268,11 +268,11 @@ export const HomePage: React.FC = () => {
             <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${showModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <div className={`bg-base-100 rounded-lg shadow-lg max-w-2xl w-full relative transform transition-transform duration-300 ${showModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
                 <MaterialEdit
-                  material={pipeline.material!}
-                  transcription={pipeline.transcription}
-                  onPublished={handlePublished}
+              material={pipeline.material!}
+              transcription={pipeline.transcription}
+              onPublished={handlePublished}
                   onCancel={handleCloseModal}
-                />
+            />
                 <button
                   onClick={handleCloseModal}
                   className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
@@ -297,8 +297,8 @@ export const HomePage: React.FC = () => {
     <div className="min-h-screen bg-base-200 py-8">
       <div className={`transition-all duration-300 ${((pipeline && (pipeline.step === 'edit' || pipeline.step === 'upload')) || showCreateForm) ? 'filter blur-md pointer-events-none select-none' : ''}`} id="main-content">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center mb-8">
+        {/* Header */}
+        <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
               <img
                 src="/echolingo_logo.png"
@@ -308,12 +308,12 @@ export const HomePage: React.FC = () => {
               />
               <h1 className="text-4xl font-bold text-base-content font-montserrat m-0 p-0">
                 EchoLingo
-              </h1>
+          </h1>
             </div>
             <p className="text-lg text-base-content/70">
-              Create language learning materials with automatic transcription
-            </p>
-          </div>
+            Create language learning materials with automatic transcription
+          </p>
+        </div>
 
           {/* Published Materials */}
           <div>
@@ -331,18 +331,18 @@ export const HomePage: React.FC = () => {
                     <Plus className="w-5 h-5" />
                   </button>
                 )}
-                <button
-                  onClick={loadData}
-                  disabled={isLoading}
+              <button
+                onClick={loadData}
+                disabled={isLoading}
                   className="p-2 text-primary hover:text-primary-focus"
                   title="Refresh"
-                >
+              >
                   {isLoading ? (
                     <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /></svg>
                   ) : (
                     <RotateCcw className="w-5 h-5" />
                   )}
-                </button>
+              </button>
               </div>
             </div>
 
@@ -482,4 +482,4 @@ export const HomePage: React.FC = () => {
       )}
     </div>
   );
-};
+}; 
