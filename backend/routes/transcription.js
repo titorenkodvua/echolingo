@@ -6,6 +6,7 @@ const multer = require('multer');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { Transcription, Material } = require('../models');
+const segmentationService = require('../services/segmentationService');
 
 const router = express.Router();
 
@@ -354,17 +355,27 @@ router.get('/status/:predictionId', async (req, res) => {
           countOfSpeakers: processedData.count_of_speakers
         });
         
+        // Автоматическая сегментация
+        const defaultSegmentationParams = {
+          minWords: 5,
+          maxWords: 15,
+          allowDifferentSpeakers: false,
+          allowCutInsideSentence: false,
+          avoidSmallSegments: true
+        };
+        const segmented = segmentationService.segmentTranscription(processedData, defaultSegmentationParams);
         updateData = {
           ...updateData,
           language: processedData.language,
           full_transcript: processedData.full_transcript,
           count_of_speakers: processedData.count_of_speakers,
           translation: processedData.translation,
-          sentences: processedData.sentences,
+          sentences: segmented.sentences,
           duration: status.result.metadata?.audio_duration || null,
           summary: status.result.summarization?.results || null,
           diarization: status.result.diarization || null,
-          metadata: status.result.metadata || null
+          metadata: status.result.metadata || null,
+          segmentationParams: defaultSegmentationParams
         };
         
         console.log(`💾 [DEBUG] Final updateData:`, {
@@ -934,15 +945,25 @@ router.get('/wait/:predictionId', async (req, res) => {
           completed_at: result.completed_at
         });
         
+        // Автоматическая сегментация
+        const defaultSegmentationParams = {
+          minWords: 5,
+          maxWords: 15,
+          allowDifferentSpeakers: false,
+          allowCutInsideSentence: false,
+          avoidSmallSegments: true
+        };
+        const segmented = segmentationService.segmentTranscription(processedData, defaultSegmentationParams);
         await transcription.update({
           status: 'completed',
           language: processedData.language,
           full_transcript: processedData.full_transcript,
           translation: processedData.translation,
-          sentences: processedData.sentences,
+          sentences: segmented.sentences,
           count_of_speakers: processedData.count_of_speakers,
           summary: processedData.summary,
-          metadata: processedData.metadata
+          metadata: processedData.metadata,
+          segmentationParams: defaultSegmentationParams
         });
 
         // 🔄 ОБНОВЛЯЕМ СТАТУС МАТЕРИАЛА
@@ -1153,6 +1174,35 @@ router.delete('/:transcriptionId', async (req, res) => {
       error: 'Failed to delete transcription',
       message: error.message
     });
+  }
+});
+
+// Новый эндпоинт: повторная сегментация с новыми параметрами
+router.post('/:id/segment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const params = req.body || {};
+    const transcription = await Transcription.findByPk(id);
+    if (!transcription) {
+      return res.status(404).json({ error: 'Transcription not found' });
+    }
+    if (!transcription.sentences) {
+      return res.status(400).json({ error: 'No sentences to segment' });
+    }
+    // Сегментируем с новыми параметрами
+    const processed = {
+      ...transcription.toJSON(),
+      sentences: transcription.sentences
+    };
+    const segmented = segmentationService.segmentTranscription(processed, params);
+    await transcription.update({
+      sentences: segmented.sentences,
+      segmentationParams: params
+    });
+    res.json({ success: true, sentences: segmented.sentences, segmentationParams: params });
+  } catch (error) {
+    console.error('Segmentation error:', error);
+    res.status(500).json({ error: 'Failed to segment transcription', message: error.message });
   }
 });
 
