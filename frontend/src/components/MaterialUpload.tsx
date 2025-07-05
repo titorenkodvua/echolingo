@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Upload, FileAudio, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { materialsApi } from '../utils/api';
-import type { Material } from '../types';
+import type { Material, UploadProgress } from '../types';
 
 interface MaterialUploadProps {
   material: Material;
@@ -15,11 +15,7 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
   onCancel 
 }) => {
   const [dragActive, setDragActive] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{
-    progress: number;
-    status: 'uploading' | 'transcribing' | 'completed' | 'error';
-    error?: string;
-  } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -62,6 +58,7 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
 
     try {
       setUploadProgress({
+        file,
         progress: 0,
         status: 'uploading'
       });
@@ -76,6 +73,7 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
       const { predictionId } = response.data;
 
       setUploadProgress({
+        file,
         progress: 50,
         status: 'transcribing'
       });
@@ -103,6 +101,7 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
             if (status === 'completed') {
               console.log('✅ Transcription completed!');
               setUploadProgress({
+                file,
                 progress: 100,
                 status: 'completed'
               });
@@ -134,6 +133,7 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setUploadProgress({
+        file,
         progress: 0,
         status: 'error',
         error: errorMessage
@@ -196,17 +196,18 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
           <div className="flex justify-center space-x-3">
             {onCancel && (
               <button
+                type="button"
+                className="btn btn-outline"
                 onClick={onCancel}
-                className="btn"
               >
-                <X className="w-4 h-4 mr-2" />
                 Cancel
               </button>
             )}
             {uploadProgress.status === 'completed' && (
               <button
-                onClick={() => onUploadComplete?.(material)}
+                type="submit"
                 className="btn btn-primary"
+                onClick={() => onUploadComplete?.(material)}
               >
                 Continue
               </button>
@@ -231,7 +232,7 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
           type="file"
           accept="audio/*"
           onChange={handleFileInput}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          className="file-input file-input-bordered w-full"
         />
         
         <div className="text-center">
@@ -250,6 +251,16 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
             </p>
           </div>
         </div>
+
+        {uploadProgress && uploadProgress.status !== 'completed' && uploadProgress.status !== 'error' && (
+          <progress className="progress progress-primary w-full mt-2" value={uploadProgress.progress} max="100"></progress>
+        )}
+
+        {uploadProgress && uploadProgress.error && (
+          <div className="alert alert-error mt-4">
+            <span>{uploadProgress.error}</span>
+          </div>
+        )}
       </div>
     </div>
   );

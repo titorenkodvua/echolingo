@@ -72,79 +72,67 @@ export const DraftForm: React.FC<DraftFormProps> = ({
       <h2 className="text-xl font-semibold text-base-content mb-6">Create New Material</h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title */}
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-base-content mb-2">
-            Title *
-          </label>
+          <label htmlFor="title" className="block text-sm font-medium text-base-content mb-2">Title</label>
           <input
-            type="text"
             id="title"
             name="title"
+            type="text"
             value={formData.title}
             onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-            placeholder="Enter material title"
+            className="input input-bordered w-full"
             required
+            maxLength={120}
           />
         </div>
-
-        {/* Target Languages */}
         <div>
-          <label htmlFor="targetLanguage" className="block text-sm font-medium text-base-content mb-2">
-            Target Languages * (comma-separated)
-          </label>
-          <input
-            type="text"
-            id="targetLanguage"
-            name="targetLanguage"
+          <label htmlFor="language" className="block text-sm font-medium text-base-content mb-2">Language</label>
+          <select
+            id="language"
+            name="language"
             value={formData.targetLanguage.join(', ')}
             onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-            placeholder="e.g., ru, pl, en"
+            className="select select-bordered w-full"
             required
-          />
-          <p className="text-xs text-base-content/60 mt-1">
-            Available codes: en, ru, pl, de, fr, es, it, pt, ja, ko, zh, ar
-          </p>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="bg-error/10 border border-error rounded-md p-3">
-            <p className="text-sm text-error">{error}</p>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-3">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="btn"
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-          )}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="btn btn-primary"
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <ArrowRight className="w-4 h-4 mr-2" />
-                Next
-              </>
-            )}
-          </button>
+            <option value="">Select language</option>
+            <option value="pl">Polish</option>
+            <option value="en">English</option>
+            <option value="ru">Russian</option>
+            <option value="de">German</option>
+            <option value="fr">French</option>
+            <option value="es">Spanish</option>
+            <option value="it">Italian</option>
+            <option value="pt">Portuguese</option>
+            <option value="ja">Japanese</option>
+            <option value="ko">Korean</option>
+            <option value="zh">Chinese</option>
+            <option value="ar">Arabic</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="difficultyLevel" className="block text-sm font-medium text-base-content mb-2">Difficulty Level</label>
+          <select
+            id="difficultyLevel"
+            name="difficultyLevel"
+            value={formData.difficultyLevel}
+            onChange={handleInputChange}
+            className="select select-bordered w-full"
+            required
+          >
+            <option value="A1">A1 - Beginner</option>
+            <option value="A2">A2 - Elementary</option>
+            <option value="B1">B1 - Intermediate</option>
+            <option value="B2">B2 - Upper Intermediate</option>
+            <option value="C1">C1 - Advanced</option>
+            <option value="C2">C2 - Mastery</option>
+          </select>
+        </div>
+        <div className="flex justify-end gap-2 mt-6">
+          {onCancel && (
+            <button type="button" className="btn btn-outline" onClick={onCancel}>Cancel</button>
+          )}
+          <button type="submit" className="btn btn-primary">Create Material</button>
         </div>
       </form>
     </div>

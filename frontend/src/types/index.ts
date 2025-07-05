@@ -22,6 +22,7 @@ export interface Sentence {
   end: number;
   speaker: number;
   confidence: number;
+  utterances: Utterance[];
 }
 
 export interface Translation {
@@ -77,4 +78,15 @@ export interface MaterialsListResponse {
   total: number;
   limit: number;
   offset: number;
+}
+
+export interface Utterance {
+  id: string;
+  is_segment_start: boolean;
+  speaker: number;
+  text: string;
+  start: number;
+  end: number;
+  confidence: number;
+  translation?: Translation[];
 } 

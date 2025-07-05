@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Save, Loader2, Eye, EyeOff } from 'lucide-react';
 import { materialsApi } from '../utils/api';
 import type { Material, Transcription } from '../types';
+import { SegmentedTranscriptionView } from './SegmentedTranscriptionView';
 
 interface MaterialPublishProps {
   material: Material;
@@ -143,10 +144,10 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
   };
 
   return (
-    <div className="rounded-lg p-6 max-w-2xl mx-auto">
+    <div className="bg-base-100 rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Material Info */}
-        <div className="bg-base-200 rounded-md p-4">
+        <div className="bg-base-200 rounded-md p-4 mb-4">
           {editingTitle ? (
             <input
               ref={titleInputRef}
@@ -188,7 +189,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
             value={formData.description}
             onChange={handleInputChange}
             rows={3}
-            className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+            className="textarea textarea-bordered w-full"
             placeholder="Enter material description"
           />
         </div>
@@ -204,7 +205,8 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               name="difficultyLevel"
               value={formData.difficultyLevel}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+              className="select select-bordered w-full"
+              required
             >
               {difficultyLevels.map(level => (
                 <option key={level.value} value={level.value}>
@@ -224,7 +226,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               name="category"
               value={formData.category}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+              className="input input-bordered w-full"
               placeholder="e.g., Business, Travel, Daily Life"
             />
           </div>
@@ -241,7 +243,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               name="tags"
               value={formData.tags.join(', ')}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+              className="input input-bordered w-full"
               placeholder="e.g., business, travel, conversation"
             />
         </div>
@@ -260,7 +262,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               onChange={handleInputChange}
               min="1"
               max="10"
-              className="w-full px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+              className="input input-bordered w-full"
             />
           </div>
 
@@ -302,20 +304,8 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
                 )}
               </button>
             </div>
-            
             {showTranscription ? (
-              <div className="space-y-2">
-                <p className="text-sm text-base-content/70">
-                  {transcription.full_transcript?.substring(0, 300)}...
-                </p>
-                <div className="flex items-center space-x-4 text-xs text-base-content/60">
-                  <span>{transcription.sentences?.length || 0} sentences</span>
-                  <span>{transcription.count_of_speakers || 0} speakers</span>
-                  {transcription.duration && (
-                    <span>{Math.round(transcription.duration / 60)} minutes</span>
-                  )}
-                </div>
-              </div>
+              <SegmentedTranscriptionView transcription={transcription} />
             ) : (
               <p className="text-sm text-base-content/70">
                 Click &quot;Show&quot; to preview the transcription
@@ -326,27 +316,26 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
 
         {/* Error Display */}
         {error && (
-          <div className="bg-error/10 border border-error rounded-md p-3">
-            <p className="text-sm text-error">{error}</p>
+          <div className="alert alert-error">
+            <span>{error}</span>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-end gap-2 mt-6">
           {onCancel && (
             <button
               type="button"
+              className="btn btn-outline"
               onClick={onCancel}
-              className="btn"
-              disabled={isSubmitting}
             >
-              Cancel
+              Back
             </button>
           )}
           <button
             type="submit"
-            disabled={isSubmitting}
             className="btn btn-primary"
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>

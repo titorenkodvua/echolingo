@@ -113,10 +113,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTranscriptionComplete 
 
           <div className="flex justify-center">
             <button
+              type="button"
+              className="btn btn-outline"
               onClick={reset}
-              className="inline-flex items-center px-4 py-2 border border-base-300 rounded-md shadow-sm text-sm font-medium text-base-content bg-base-100 hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
-              <X className="w-4 h-4 mr-2" />
               Reset
             </button>
           </div>
@@ -142,8 +142,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTranscriptionComplete 
           type="file"
           accept="audio/*"
           onChange={handleFileInput}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          disabled={isProcessing}
+          className="file-input file-input-bordered w-full"
         />
         
         <div className="text-center">

@@ -5,6 +5,7 @@ import { MaterialUpload } from '../components/MaterialUpload';
 import { MaterialEdit } from '../components/MaterialPublish';
 import { materialsApi } from '../utils/api';
 import type { Material, Transcription } from '../types';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 type PipelineStep = 'draft' | 'upload' | 'edit';
 
@@ -49,6 +50,8 @@ export const HomePage: React.FC = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const theme = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Load materials and drafts
   const loadData = async () => {
@@ -161,19 +164,13 @@ export const HomePage: React.FC = () => {
 
   // Pipeline handlers
   const handleDraftCreated = (material: Material) => {
-    setPipeline({ step: 'upload', material });
     setDrafts(prev => [material, ...prev]);
+    setShowCreateForm(false);
+    setPipeline({ step: 'upload', material });
   };
 
   const handleUploadComplete = async (material: Material) => {
-    let transcription: Transcription | undefined = undefined;
-    if (material.transcriptionId) {
-      const resp = await materialsApi.getById(material.id);
-      if (resp.success && resp.data && resp.data.transcription) {
-        transcription = resp.data.transcription;
-      }
-    }
-    setPipeline({ step: 'edit', material, transcription });
+    navigate(`/materials/${material.id}/edit?back=${encodeURIComponent(location.pathname)}`);
   };
 
   const handlePublished = async (material: Material) => {
@@ -213,18 +210,16 @@ export const HomePage: React.FC = () => {
 
   const getStatusBadge = (status: Material['status']) => {
     const statusConfig = {
-      draft: { color: 'bg-gray-100 text-gray-800', label: 'Draft' },
-      processing: { color: 'bg-yellow-100 text-yellow-800', label: 'Processing' },
-      ready: { color: 'bg-green-100 text-green-800', label: 'Ready' },
-      published: { color: 'bg-blue-100 text-blue-800', label: 'Published' },
-      failed: { color: 'bg-red-100 text-red-800', label: 'Failed' }
+      draft: { color: 'badge badge-outline', label: 'Draft' },
+      processing: { color: 'badge badge-warning', label: 'Processing' },
+      ready: { color: 'badge badge-success', label: 'Ready' },
+      published: { color: 'badge badge-primary', label: 'Published' },
+      failed: { color: 'badge badge-error', label: 'Failed' }
     };
 
     const config = statusConfig[status];
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        {config.label}
-      </span>
+      <span className={`${config.color}`}>{config.label}</span>
     );
   };
 
@@ -242,52 +237,6 @@ export const HomePage: React.FC = () => {
       setIsUploadModalOpen(false);
       handleCancelPipeline();
     }, 250);
-  };
-
-  const renderPipelineStep = () => {
-    if (!pipeline) return null;
-
-    switch (pipeline.step) {
-      case 'draft':
-        return (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Create New Material</h2>
-            <DraftForm
-              onDraftCreated={handleDraftCreated}
-              onCancel={handleCancelPipeline}
-            />
-          </div>
-        );
-
-      case 'upload':
-        return null;
-
-      case 'edit':
-        return (
-          isModalOpen && (
-            <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${showModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-              <div className={`bg-base-100 rounded-lg shadow-lg max-w-2xl w-full relative transform transition-transform duration-300 ${showModal ? 'scale-100' : 'scale-95'} max-h-screen overflow-y-auto`}>
-                <MaterialEdit
-              material={pipeline.material!}
-              transcription={pipeline.transcription}
-              onPublished={handlePublished}
-                  onCancel={handleCloseModal}
-            />
-                <button
-                  onClick={handleCloseModal}
-                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
-                  title="Close"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          )
-        );
-
-      default:
-        return null;
-    }
   };
 
   // Фильтруем опубликованные материалы (draft не показываем)
@@ -325,7 +274,7 @@ export const HomePage: React.FC = () => {
                 {!pipeline && !showCreateForm && (
                   <button
                     onClick={() => setShowCreateForm(true)}
-                    className="p-2 text-primary hover:text-primary-focus"
+                    className="btn btn-primary btn-sm"
                     title="Create New Material"
                   >
                     <Plus className="w-5 h-5" />
@@ -334,8 +283,8 @@ export const HomePage: React.FC = () => {
               <button
                 onClick={loadData}
                 disabled={isLoading}
-                  className="p-2 text-primary hover:text-primary-focus"
-                  title="Refresh"
+                className="btn btn-ghost btn-sm"
+                title="Refresh"
               >
                   {isLoading ? (
                     <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /></svg>
@@ -380,7 +329,7 @@ export const HomePage: React.FC = () => {
                             {material.tags.map((tag, index) => (
                               <span
                                 key={index}
-                                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                                className="badge badge-primary badge-outline"
                               >
                                 {tag}
                               </span>
@@ -392,16 +341,14 @@ export const HomePage: React.FC = () => {
                         <div>Created: {new Date(material.createdAt).toLocaleDateString()}</div>
                         <div>Plays: {material.playCount}</div>
                         <div className="flex flex-row justify-end items-center gap-2 mt-2">
-                          <button
-                            onClick={() => setPipeline({ step: 'edit', material })}
-                            className="p-2 text-primary hover:text-primary-focus"
-                            title="Edit"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
+                          <Link to={`/materials/${material.id}/edit`} title="Редактировать">
+                            <button className="btn btn-ghost btn-square btn-sm" aria-label="Редактировать">
+                              <Edit3 className="w-5 h-5" />
+                            </button>
+                          </Link>
                           <button
                             onClick={() => { setMaterialToDelete(material); setShowDeleteModal(true); }}
-                            className="p-2 text-error hover:text-error/80"
+                            className="btn btn-error btn-square btn-sm"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -456,23 +403,22 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       )}
-      {pipeline && pipeline.step === 'edit' && renderPipelineStep()}
-      {/* Модальное окно подтверждения удаления */}
+      {/* Модальное окно подтверждения удаления (DaisyUI Modal) */}
       {showDeleteModal && materialToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-300 bg-opacity-60">
-          <div className="bg-base-100 rounded-lg shadow-lg max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-base-content mb-4">Удалить материал?</h3>
-            <p className="text-base-content mb-6">Это действие необратимо. Вы уверены, что хотите удалить материал <span className="font-medium">"{materialToDelete.title}"</span>?</p>
-            <div className="flex justify-end space-x-3">
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Удалить материал?</h3>
+            <p className="py-4">Это действие необратимо. Вы уверены, что хотите удалить материал <span className="font-medium">"{materialToDelete.title}"</span>?</p>
+            <div className="modal-action">
               <button
                 onClick={() => { setShowDeleteModal(false); setMaterialToDelete(null); }}
-                className="px-4 py-2 border border-base-300 rounded-md text-sm font-medium text-base-content bg-base-100 hover:bg-base-200"
+                className="btn btn-outline"
               >
                 Отмена
               </button>
               <button
                 onClick={handleDeleteMaterial}
-                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-base-100-content bg-error hover:bg-error/80"
+                className="btn btn-error"
               >
                 Удалить
               </button>
