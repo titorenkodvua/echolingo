@@ -276,6 +276,7 @@ export const HomePage: React.FC = () => {
                     onClick={() => setShowCreateForm(true)}
                     className="btn btn-primary btn-sm"
                     title="Create New Material"
+                    aria-label="Создать материал"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
@@ -285,6 +286,7 @@ export const HomePage: React.FC = () => {
                 disabled={isLoading}
                 className="btn btn-ghost btn-sm"
                 title="Refresh"
+                aria-label="Обновить"
               >
                   {isLoading ? (
                     <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /></svg>
@@ -350,6 +352,7 @@ export const HomePage: React.FC = () => {
                             onClick={() => { setMaterialToDelete(material); setShowDeleteModal(true); }}
                             className="btn btn-error btn-square btn-sm"
                             title="Delete"
+                            aria-label="Удалить"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -378,6 +381,7 @@ export const HomePage: React.FC = () => {
               onClick={() => setShowCreateForm(false)}
               className="absolute top-4 right-4 text-base-content/40 hover:text-base-content text-2xl font-bold focus:outline-none"
               title="Close"
+              aria-label="Закрыть"
             >
               ×
             </button>
@@ -397,6 +401,7 @@ export const HomePage: React.FC = () => {
               onClick={handleCloseUploadModal}
               className="absolute top-4 right-4 text-base-content/40 hover:text-base-content text-2xl font-bold focus:outline-none"
               title="Close"
+              aria-label="Закрыть"
             >
               ×
             </button>

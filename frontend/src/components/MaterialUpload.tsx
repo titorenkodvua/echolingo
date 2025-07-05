@@ -178,18 +178,13 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
             <p className="text-sm text-base-content/70">{getStatusText()}</p>
           </div>
 
-          {uploadProgress.status !== 'completed' && uploadProgress.status !== 'error' && (
-            <div className="w-full bg-base-200 rounded-full h-2 mb-4">
-              <div 
-                className="bg-primary h-2 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress.progress}%` }}
-              />
-            </div>
+          {uploadProgress && (uploadProgress as UploadProgress).status !== 'completed' && (uploadProgress as UploadProgress).status !== 'error' && (
+            <progress className="progress progress-primary w-full mt-2" value={(uploadProgress as UploadProgress).progress} max="100"></progress>
           )}
 
-          {uploadProgress.error && (
-            <div className="bg-error/10 border border-error rounded-md p-3 mb-4">
-              <p className="text-sm text-error">{uploadProgress.error}</p>
+          {uploadProgress && (uploadProgress as UploadProgress).status === 'error' && (
+            <div className="alert alert-error mt-4">
+              <span>Upload failed. Please try again.</span>
             </div>
           )}
 
@@ -252,13 +247,13 @@ export const MaterialUpload: React.FC<MaterialUploadProps> = ({
           </div>
         </div>
 
-        {uploadProgress && uploadProgress.status !== 'completed' && uploadProgress.status !== 'error' && (
-          <progress className="progress progress-primary w-full mt-2" value={uploadProgress.progress} max="100"></progress>
+        {uploadProgress && (uploadProgress as UploadProgress).status !== 'completed' && (uploadProgress as UploadProgress).status !== 'error' && (
+          <progress className="progress progress-primary w-full mt-2" value={(uploadProgress as UploadProgress).progress} max="100"></progress>
         )}
 
-        {uploadProgress && uploadProgress.error && (
+        {uploadProgress && (uploadProgress as UploadProgress).status === 'error' && (
           <div className="alert alert-error mt-4">
-            <span>{uploadProgress.error}</span>
+            <span>Upload failed. Please try again.</span>
           </div>
         )}
       </div>

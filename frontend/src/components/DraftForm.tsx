@@ -14,7 +14,8 @@ export const DraftForm: React.FC<DraftFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     title: '',
-    targetLanguage: ['ru']
+    targetLanguage: ['ru'],
+    difficultyLevel: 'A1',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,7 +116,7 @@ export const DraftForm: React.FC<DraftFormProps> = ({
           <select
             id="difficultyLevel"
             name="difficultyLevel"
-            value={formData.difficultyLevel}
+            value={formData.difficultyLevel || ''}
             onChange={handleInputChange}
             className="select select-bordered w-full"
             required
