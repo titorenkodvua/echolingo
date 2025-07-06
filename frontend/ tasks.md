@@ -14,6 +14,30 @@ I have created the following plan after thorough exploration and analysis of the
 
 ## Proposed File Changes
 
+- [x] frontend/package.json(MODIFY)
+- [ ] frontend/src/lib(NEW)
+- [ ] frontend/src/lib/query-client.ts(NEW)
+- [ ] frontend/src/lib/utils.ts(NEW)
+- [ ] frontend/src/providers(NEW)
+- [ ] frontend/src/providers/query-provider.tsx(NEW)
+- [ ] frontend/src/providers/toast-provider.tsx(NEW)
+- [ ] frontend/src/providers/index.tsx(NEW)
+- [ ] frontend/src/hooks/api(NEW)
+- [ ] frontend/src/hooks/api/use-materials.ts(NEW)
+- [ ] frontend/src/hooks/api/index.ts(NEW)
+- [ ] frontend/src/components/ui(NEW)
+- [ ] frontend/src/components/ui/loading-spinner.tsx(NEW)
+- [ ] frontend/src/components/ui/button.tsx(NEW)
+- [ ] frontend/src/components/ui/index.ts(NEW)
+- [ ] frontend/src/components/materials(NEW)
+- [ ] frontend/src/components/materials/material-card.tsx(NEW)
+- [ ] frontend/src/components/materials/materials-list.tsx(NEW)
+- [ ] frontend/src/components/materials/index.ts(NEW)
+- [ ] frontend/src/main.tsx(MODIFY)
+- [x] frontend/src/pages/HomePage.tsx(MODIFY)
+- [x] frontend/vite.config.ts(MODIFY)
+- [x] frontend/README.md(MODIFY)
+
 ### frontend/package.json(MODIFY)
 
 Добавить ключевые зависимости для улучшения архитектуры:
@@ -109,152 +133,4 @@ References:
 
 Создать основные хуки для работы с материалами:
 
-- `useMaterials()` - получение списка с кешированием
-- `useMaterial(id)` - получение одного материала
-- `useCreateMaterial()` - создание нового материала
-- `useUpdateMaterial()` - обновление материала
-- `useDeleteMaterial()` - удаление материала
-
-Каждый хук должен:
-- Использовать правильные query keys
-- Инвалидировать связанные запросы
-- Показывать toast уведомления
-- Иметь типизацию
-
-Использовать существующий API из `src/utils/api.ts`
-
-### frontend/src/hooks/api/index.ts(NEW)
-
-Создать barrel export для API хуков.
-
-### frontend/src/components/ui(NEW)
-
-Создать директорию для переиспользуемых UI компонентов.
-
-### frontend/src/components/ui/loading-spinner.tsx(NEW)
-
-Создать компонент загрузки:
-
-- Использовать DaisyUI loading классы
-- Поддержать разные размеры (sm, md, lg)
-- Добавить опциональный текст
-- Центрирование по умолчанию
-
-Пропсы: size, text, className
-Использовать вместо дублированных spinner'ов в компонентах.
-
-### frontend/src/components/ui/button.tsx(NEW)
-
-Создать улучшенный Button компонент:
-
-- Расширить DaisyUI btn с loading состоянием
-- Добавить поддержку иконок
-- Улучшить accessibility
-- Добавить варианты размеров
-
-Пропсы: variant, size, loading, disabled, icon, children
-Использовать в формах вместо обычных button элементов.
-
-### frontend/src/components/ui/index.ts(NEW)
-
-Создать barrel export для UI компонентов.
-
-### frontend/src/components/materials(NEW)
-
-Создать директорию для компонентов материалов.
-
-### frontend/src/components/materials/material-card.tsx(NEW)
-
-References: 
-
-- frontend/src/pages/HomePage.tsx(MODIFY)
-
-Извлечь карточку материала из HomePage:
-
-- Перенести логику рендеринга одного материала
-- Добавить hover эффекты
-- Улучшить accessibility
-- Оптимизировать с React.memo
-- Использовать новые UI компоненты
-
-Пропсы: material, onEdit, onDelete
-Это значительно упростит HomePage компонент.
-
-### frontend/src/components/materials/materials-list.tsx(NEW)
-
-References: 
-
-- frontend/src/pages/HomePage.tsx(MODIFY)
-- frontend/src/components/materials/material-card.tsx(NEW)
-
-Создать компонент списка материалов:
-
-- Извлечь логику отображения списка из HomePage
-- Добавить loading состояния
-- Реализовать empty state
-- Использовать MaterialCard компонент
-- Добавить анимации появления
-
-Пропсы: materials, loading, onEdit, onDelete
-Использовать в HomePage для отображения списка.
-
-### frontend/src/components/materials/index.ts(NEW)
-
-Создать barrel export для компонентов материалов.
-
-### frontend/src/main.tsx(MODIFY)
-
-References: 
-
-- frontend/src/providers/index.tsx(NEW)
-
-Интегрировать провайдеры в приложение:
-
-- Импортировать AppProviders из `src/providers`
-- Обернуть App в AppProviders
-- Добавить error boundary для глобальной обработки ошибок
-
-Это создаст основу для современной архитектуры с централизованным управлением состоянием.
-
-### frontend/src/pages/HomePage.tsx(MODIFY)
-
-References: 
-
-- frontend/src/hooks/api/use-materials.ts(NEW)
-- frontend/src/components/materials/materials-list.tsx(NEW)
-
-Рефакторить HomePage для использования новой архитектуры:
-
-- Заменить useState/useEffect на useMaterials хук
-- Использовать MaterialsList компонент вместо inline рендеринга
-- Заменить alert() на toast уведомления
-- Убрать дублированную логику состояния
-- Упростить компонент с 430+ строк до ~150 строк
-
-Основная логика: загрузка через хуки, рендеринг через компоненты, уведомления через toast.
-
-Это демонстрирует преимущества новой архитектуры.
-
-### frontend/vite.config.ts(MODIFY)
-
-Добавить path aliases для удобного импорта:
-
-- `@/` для `src/`
-- `@/components` для `src/components`
-- `@/hooks` для `src/hooks`
-- `@/lib` для `src/lib`
-- `@/providers` для `src/providers`
-
-Это улучшит DX и сделает импорты более читаемыми.
-
-### frontend/README.md(MODIFY)
-
-Обновить документацию с описанием новой архитектуры:
-
-- Описать использование TanStack Query
-- Документировать структуру провайдеров
-- Объяснить организацию компонентов
-- Добавить примеры использования API хуков
-- Описать path aliases
-
-Это поможет команде понять новую архитектуру.
+- `useMaterials()`

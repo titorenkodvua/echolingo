@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowRight, Loader2 } from 'lucide-react';
-import { materialsApi } from '../utils/api';
+import { materialsApi, transcriptionApi } from '../utils/api';
 import type { Material } from '../types';
 
 interface DraftFormProps {
@@ -17,13 +17,18 @@ export const DraftForm: React.FC<DraftFormProps> = ({
     targetLanguage: ['ru'],
     difficultyLevel: 'A1',
   });
-
+  const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<'idle' | 'uploading' | 'transcribing' | 'done'>('idle');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
+    const { name, value, type } = e.target;
+    if (type === 'file') {
+      const files = (e.target as HTMLInputElement).files;
+      setFile(files && files[0] ? files[0] : null);
+      return;
+    }
     if (name === 'targetLanguage') {
       const languages = value.split(',').map(lang => lang.trim()).filter(lang => lang);
       setFormData(prev => ({ ...prev, targetLanguage: languages }));
@@ -34,35 +39,58 @@ export const DraftForm: React.FC<DraftFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.title.trim()) {
       setError('Title is required');
       return;
     }
-
     if (formData.targetLanguage.length === 0) {
       setError('At least one target language is required');
       return;
     }
-
+    if (!file) {
+      setError('Audio file is required');
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
-
+    setProgress('uploading');
     try {
-      const response = await materialsApi.createDraft({
+      // 1. Create draft
+      const draftRes = await materialsApi.createDraft({
         title: formData.title,
         targetLanguage: formData.targetLanguage,
-        userId: 'anonymous' // TODO: Get from auth context
+        userId: 'anonymous',
       });
-      
-      if (response.success && response.data) {
-        onDraftCreated?.(response.data);
-      } else {
-        throw new Error(response.error || 'Failed to create draft');
+      if (!draftRes.success || !draftRes.data) throw new Error(draftRes.error || 'Failed to create draft');
+      const material = draftRes.data;
+      // 2. Upload file
+      const uploadRes = await materialsApi.uploadFile(material.id, file);
+      if (!uploadRes.success || !uploadRes.data) throw new Error(uploadRes.error || 'Failed to upload file');
+      const predictionId = uploadRes.data.predictionId;
+      setProgress('transcribing');
+      // 3. Poll transcription status
+      let attempts = 0;
+      const maxAttempts = 60;
+      let status = '';
+      while (attempts < maxAttempts) {
+        attempts++;
+        const statusRes = await transcriptionApi.wait(predictionId);
+        if (statusRes.success && statusRes.data) {
+          status = statusRes.data.status || statusRes.data.data?.status;
+          if (status === 'done') break;
+        }
+        await new Promise(res => setTimeout(res, 5000));
       }
+      if (status !== 'done') throw new Error('Transcription timeout');
+      setProgress('done');
+      // 4. Get updated material
+      const matRes = await materialsApi.getById(material.id);
+      if (!matRes.success || !matRes.data) throw new Error(matRes.error || 'Failed to fetch material');
+      onDraftCreated?.(matRes.data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
+      setProgress('idle');
     } finally {
       setIsSubmitting(false);
     }
@@ -71,7 +99,6 @@ export const DraftForm: React.FC<DraftFormProps> = ({
   return (
     <div className="rounded-lg p-6 max-w-md mx-auto">
       <h2 className="text-xl font-semibold text-base-content mb-6">Create New Material</h2>
-      
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-base-content mb-2">Title</label>
@@ -90,7 +117,7 @@ export const DraftForm: React.FC<DraftFormProps> = ({
           <label htmlFor="language" className="block text-sm font-medium text-base-content mb-2">Language</label>
           <select
             id="language"
-            name="language"
+            name="targetLanguage"
             value={formData.targetLanguage.join(', ')}
             onChange={handleInputChange}
             className="select select-bordered w-full"
@@ -129,11 +156,31 @@ export const DraftForm: React.FC<DraftFormProps> = ({
             <option value="C2">C2 - Mastery</option>
           </select>
         </div>
+        <div>
+          <label htmlFor="audio" className="block text-sm font-medium text-base-content mb-2">Audio File</label>
+          <input
+            id="audio"
+            name="audio"
+            type="file"
+            accept="audio/*"
+            className="file-input file-input-bordered w-full"
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        {error && <div className="text-error text-sm">{error}</div>}
+        {progress !== 'idle' && (
+          <div className="flex items-center gap-2 text-sm">
+            {progress === 'uploading' && <Loader2 className="animate-spin w-4 h-4" />} Uploading & Transcribing...
+          </div>
+        )}
         <div className="flex justify-end gap-2 mt-6">
           {onCancel && (
-            <button type="button" className="btn btn-outline" onClick={onCancel}>Cancel</button>
+            <button type="button" className="btn btn-outline" onClick={onCancel} disabled={isSubmitting || progress !== 'idle'}>Cancel</button>
           )}
-          <button type="submit" className="btn btn-primary">Create Material</button>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting || progress !== 'idle'}>
+            {isSubmitting || progress !== 'idle' ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}Create Material
+          </button>
         </div>
       </form>
     </div>
