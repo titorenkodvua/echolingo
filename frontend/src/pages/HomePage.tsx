@@ -285,7 +285,7 @@ export const HomePage: React.FC = () => {
                 onClick={loadData}
                 disabled={isLoading}
                 className="btn btn-ghost btn-sm"
-                title="Refresh"
+                  title="Refresh"
                 aria-label="Обновить"
               >
                   {isLoading ? (
@@ -346,7 +346,7 @@ export const HomePage: React.FC = () => {
                           <Link to={`/materials/${material.id}/edit`} title="Редактировать">
                             <button className="btn btn-ghost btn-square btn-sm" aria-label="Редактировать">
                               <Edit3 className="w-5 h-5" />
-                            </button>
+                          </button>
                           </Link>
                           <button
                             onClick={() => { setMaterialToDelete(material); setShowDeleteModal(true); }}
