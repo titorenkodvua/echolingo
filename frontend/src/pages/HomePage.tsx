@@ -10,7 +10,7 @@ import { DraftForm } from '../components/DraftForm';
 // ThemeController — DaisyUI theme switcher (absolute top-right, новые иконки)
 const ThemeController: React.FC = () => {
   const [theme, setTheme] = React.useState(() =>
-    typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') || 'light' : 'light'
+    typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') || 'el-light' : 'el-light'
   );
 
   React.useEffect(() => {
@@ -30,7 +30,7 @@ const ThemeController: React.FC = () => {
           type="checkbox"
           className="theme-controller"
           checked={theme === 'dark'}
-          onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onChange={() => setTheme(theme === 'dark' ? 'el-light' : 'dark')}
           aria-checked={theme === 'dark'}
         />
         {/* sun icon */}
@@ -84,61 +84,63 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-base-200 py-8">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <img
-              src="/echolingo_logo.png"
-              alt="EchoLingo Logo"
-              className="mr-3"
-              style={{ height: 48 }}
-            />
-            <h1 className="text-4xl font-bold text-base-content font-montserrat m-0 p-0">
-              EchoLingo
-            </h1>
-          </div>
+            <div className="flex items-center justify-center mb-4">
+              <img
+                src="/echolingo_logo.png"
+                alt="EchoLingo Logo"
+                className="mr-3"
+                style={{ height: 48 }}
+              />
+              <h1 className="text-4xl font-bold text-base-content font-montserrat m-0 p-0">
+                EchoLingo
+          </h1>
+            </div>
           <ThemeController />
-          <p className="text-lg text-base-content/70">
+            <p className="text-lg text-base-content/70">
             Create language learning materials with automatic transcription
           </p>
         </div>
-        {/* Published Materials */}
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-base-content">
-              Published Materials
-            </h2>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                aria-label="Создать материал"
-                onClick={() => setShowCreateModal(true)}
-                icon={<Plus className="w-5 h-5" />}
-                noIconMargin
-                className="btn-square"
-              >
-                <span className="sr-only">Add</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => refetch()}
-                disabled={isLoading}
-                aria-label="Обновить"
-                loading={isLoading}
-                icon={<RotateCcw className="w-5 h-5" />}
-                className="btn-square"
-              />
+          {/* Published Materials */}
+          <div>
+            <div className="flex justify-between items-center mb-4 px-2">
+              <h2 className="text-xl font-semibold text-base-content">
+                Published Materials
+              </h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Создать материал"
+                  onClick={() => setShowCreateModal(true)}
+                  icon={<Plus className="w-5 h-5" />}
+                  noIconMargin
+                  className="btn-square"
+                >
+                  <span className="sr-only">Add</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => refetch()}
+                  disabled={isLoading}
+                  aria-label="Обновить"
+                  loading={isLoading}
+                  icon={<RotateCcw className="w-5 h-5" />}
+                  className="btn-square"
+                />
+              </div>
             </div>
+            <MaterialsList
+              materials={publishedMaterials}
+              loading={isLoading}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </div>
-          <MaterialsList
-            materials={publishedMaterials}
-            loading={isLoading}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
         </div>
       </div>
       {/* Модальное окно для создания материала */}
