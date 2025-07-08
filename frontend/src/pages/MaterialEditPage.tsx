@@ -43,8 +43,10 @@ export const MaterialEditPage: React.FC = () => {
   if (error || !material) return <div>{error || 'Material not found'}</div>;
 
   return (
-    <div className="max-w-2xl mx-auto py-8">
-      <MaterialEdit material={material} onPublished={handlePublished} onCancel={handleCancel} />
+    <div className="min-h-screen bg-base-200 py-8">
+      <div className="max-w-2xl mx-auto">
+        <MaterialEdit material={material} onPublished={handlePublished} onCancel={handleCancel} />
+      </div>
     </div>
   );
 }; 

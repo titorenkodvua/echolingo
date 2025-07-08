@@ -144,95 +144,96 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
   };
 
   return (
-    <div className="bg-base-100 rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Material Info */}
-        <div className="bg-base-200 rounded-md p-4 mb-4">
-          {editingTitle ? (
-            <input
-              ref={titleInputRef}
-              type="text"
-              value={formData.title}
-              onChange={handleTitleChange}
-              onBlur={handleTitleBlur}
-              onKeyDown={handleTitleKeyDown}
-              className="text-xl font-medium text-base-content bg-base-200 border-b border-primary/60 focus:outline-none focus:border-primary-focus w-full mb-2"
-              maxLength={120}
-            />
-          ) : (
-            <h3
-              className="text-xl font-medium text-base-content mb-2 cursor-pointer hover:underline"
-              onClick={handleTitleClick}
-              title="Click to edit title"
-            >
-              {formData.title || 'Untitled'}
-            </h3>
-          )}
-          <p className="text-sm text-base-content/70">
-            {material.language} → {material.targetLanguage.join(', ')}
-          </p>
-          {material.duration && (
-            <p className="text-sm text-base-content/70">
-              Duration: {Math.round(material.duration / 60)} minutes
+    <div className="card bg-base-100 border border-base-200 shadow rounded-box max-w-2xl mx-auto">
+      <div className="card-body p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Material Info */}
+          <div className="bg-neutral text-neutral-content rounded-box p-4 mb-4">
+            {editingTitle ? (
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={formData.title}
+                onChange={handleTitleChange}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                className="text-xl font-medium bg-base-200 border-b border-primary/60 focus:outline-none focus:border-primary-focus w-full mb-2"
+                maxLength={120}
+              />
+            ) : (
+              <h3
+                className="text-xl font-medium mb-2 cursor-pointer hover:underline"
+                onClick={handleTitleClick}
+                title="Click to edit title"
+              >
+                {formData.title || 'Untitled'}
+              </h3>
+            )}
+            <p className="text-sm opacity-70">
+              {material.language} → {material.targetLanguage.join(', ')}
             </p>
-          )}
-        </div>
-
-        {/* Description */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-base-content mb-2">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            rows={3}
-            className="textarea textarea-bordered w-full"
-            placeholder="Enter material description"
-          />
-        </div>
-
-        {/* Difficulty and Category */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="difficultyLevel" className="block text-sm font-medium text-base-content mb-2">
-              Difficulty Level
-            </label>
-            <select
-              id="difficultyLevel"
-              name="difficultyLevel"
-              value={formData.difficultyLevel}
-              onChange={handleInputChange}
-              className="select select-bordered w-full"
-              required
-            >
-              {difficultyLevels.map(level => (
-                <option key={level.value} value={level.value}>
-                  {level.label}
-                </option>
-              ))}
-            </select>
+            {material.duration && (
+              <p className="text-sm opacity-70">
+                Duration: {Math.round(material.duration / 60)} minutes
+              </p>
+            )}
           </div>
 
+          {/* Description */}
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-base-content mb-2">
-              Category
+            <label htmlFor="description" className="block text-sm font-medium text-base-content mb-2">
+              Description
             </label>
-            <input
-              type="text"
-              id="category"
-              name="category"
-              value={formData.category}
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
               onChange={handleInputChange}
-              className="input input-bordered w-full"
-              placeholder="e.g., Business, Travel, Daily Life"
+              rows={3}
+              className="textarea textarea-bordered w-full"
+              placeholder="Enter material description"
             />
           </div>
-        </div>
 
-        {/* Tags */}
+          {/* Difficulty and Category */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="difficultyLevel" className="block text-sm font-medium text-base-content mb-2">
+                Difficulty Level
+              </label>
+              <select
+                id="difficultyLevel"
+                name="difficultyLevel"
+                value={formData.difficultyLevel}
+                onChange={handleInputChange}
+                className="select select-bordered w-full"
+                required
+              >
+                {difficultyLevels.map(level => (
+                  <option key={level.value} value={level.value}>
+                    {level.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-base-content mb-2">
+                Category
+              </label>
+              <input
+                type="text"
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                className="input input-bordered w-full"
+                placeholder="e.g., Business, Travel, Daily Life"
+              />
+            </div>
+          </div>
+
+          {/* Tags */}
           <div>
             <label htmlFor="tags" className="block text-sm font-medium text-base-content mb-2">
               Tags (comma-separated)
@@ -246,111 +247,112 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
               className="input input-bordered w-full"
               placeholder="e.g., business, travel, conversation"
             />
-        </div>
-
-        {/* Settings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="recommendedRepetitions" className="block text-sm font-medium text-base-content mb-2">
-              Recommended Repetitions
-            </label>
-            <input
-              type="number"
-              id="recommendedRepetitions"
-              name="recommendedRepetitions"
-              value={formData.recommendedRepetitions}
-              onChange={handleInputChange}
-              min="1"
-              max="10"
-              className="input input-bordered w-full"
-            />
           </div>
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isPublic"
-              name="isPublic"
-              checked={formData.isPublic}
-              onChange={handleInputChange}
-              className="checkbox checkbox-primary"
-            />
-            <label htmlFor="isPublic" className="ml-2 block text-sm text-base-content">
-              Make this material public
-            </label>
-          </div>
-        </div>
+          {/* Settings */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="recommendedRepetitions" className="block text-sm font-medium text-base-content mb-2">
+                Recommended Repetitions
+              </label>
+              <input
+                type="number"
+                id="recommendedRepetitions"
+                name="recommendedRepetitions"
+                value={formData.recommendedRepetitions}
+                onChange={handleInputChange}
+                min="1"
+                max="10"
+                className="input input-bordered w-full"
+              />
+            </div>
 
-        {/* Transcription Preview */}
-        {transcription && (
-          <div className="bg-base-200 rounded-md p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-medium text-base-content">Transcription Preview</h3>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isPublic"
+                name="isPublic"
+                checked={formData.isPublic}
+                onChange={handleInputChange}
+                className="checkbox checkbox-primary"
+              />
+              <label htmlFor="isPublic" className="ml-2 block text-sm text-base-content">
+                Make this material public
+              </label>
+            </div>
+          </div>
+
+          {/* Transcription Preview */}
+          {transcription && (
+            <div className="bg-base-200 rounded-md p-4">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium text-base-content">Transcription Preview</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowTranscription(!showTranscription)}
+                  className="inline-flex items-center text-sm text-primary hover:text-primary-focus"
+                >
+                  {showTranscription ? (
+                    <>
+                      <EyeOff className="w-4 h-4 mr-1" />
+                      Hide
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4 mr-1" />
+                      Show
+                    </>
+                  )}
+                </button>
+              </div>
+              {showTranscription ? (
+                <SegmentedTranscriptionView transcription={transcription} />
+              ) : (
+                <p className="text-sm text-base-content/70">
+                  Click &quot;Show&quot; to preview the transcription
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="alert alert-error">
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-2 mt-6">
+            {onCancel && (
               <button
                 type="button"
-                onClick={() => setShowTranscription(!showTranscription)}
-                className="inline-flex items-center text-sm text-primary hover:text-primary-focus"
+                className="btn btn-accent"
+                onClick={onCancel}
               >
-                {showTranscription ? (
-                  <>
-                    <EyeOff className="w-4 h-4 mr-1" />
-                    Hide
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-4 h-4 mr-1" />
-                    Show
-                  </>
-                )}
+                Back
               </button>
-            </div>
-            {showTranscription ? (
-              <SegmentedTranscriptionView transcription={transcription} />
-            ) : (
-              <p className="text-sm text-base-content/70">
-                Click &quot;Show&quot; to preview the transcription
-              </p>
             )}
-          </div>
-        )}
-
-        {/* Error Display */}
-        {error && (
-          <div className="alert alert-error">
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-2 mt-6">
-          {onCancel && (
             <button
-              type="button"
-              className="btn btn-outline"
-              onClick={onCancel}
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSubmitting}
             >
-              Back
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {mode === 'edit' ? 'Saving...' : 'Publishing...'}
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  {mode === 'edit' ? 'Save changes' : 'Publish Material'}
+                </>
+              )}
             </button>
-          )}
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {mode === 'edit' ? 'Saving...' : 'Publishing...'}
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                {mode === 'edit' ? 'Save changes' : 'Publish Material'}
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
