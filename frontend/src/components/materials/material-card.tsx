@@ -58,15 +58,17 @@ export const MaterialCard: React.FC<MaterialCardProps> = ({ material, onEdit, on
                 icon={<Edit3 className="w-5 h-5" />}
                 aria-label="Edit"
                 onClick={() => onEdit(material)}
+                className="btn-square"
               />
             )}
             {onDelete && (
               <Button
-                variant="error"
+                variant="ghost"
                 size="sm"
                 icon={<Trash2 className="w-4 h-4" />}
                 aria-label="Delete"
                 onClick={() => onDelete(material)}
+                className="btn-square"
               />
             )}
           </div>
