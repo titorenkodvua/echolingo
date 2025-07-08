@@ -145,10 +145,8 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
 
   return (
     <div className="card bg-base-100 border border-base-200 shadow rounded-box max-w-2xl mx-auto">
-      <div className="card-body p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Material Info */}
-          <div className="bg-neutral text-neutral-content rounded-box p-4 mb-4">
+      {/* Material Info */}
+      <div className="bg-neutral text-neutral-content rounded-t-box p-4 mb-4">
             {editingTitle ? (
               <input
                 ref={titleInputRef}
@@ -157,7 +155,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
                 onChange={handleTitleChange}
                 onBlur={handleTitleBlur}
                 onKeyDown={handleTitleKeyDown}
-                className="text-xl font-medium bg-base-200 border-b border-primary/60 focus:outline-none focus:border-primary-focus w-full mb-2"
+                className="text-xl font-medium bg-neutral text-neutral-content border-b border-primary/60 focus:outline-none focus:border-primary-focus w-full mb-2"
                 maxLength={120}
               />
             ) : (
@@ -169,7 +167,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
                 {formData.title || 'Untitled'}
               </h3>
             )}
-            <p className="text-sm opacity-70">
+            < p className="text-sm opacity-70">
               {material.language} → {material.targetLanguage.join(', ')}
             </p>
             {material.duration && (
@@ -177,7 +175,10 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
                 Duration: {Math.round(material.duration / 60)} minutes
               </p>
             )}
-          </div>
+      </div>
+      <div className="card-body p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
 
           {/* Description */}
           <div>
@@ -274,7 +275,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
                 name="isPublic"
                 checked={formData.isPublic}
                 onChange={handleInputChange}
-                className="checkbox checkbox-primary"
+                className="toggle toggle-primary"
               />
               <label htmlFor="isPublic" className="ml-2 block text-sm text-base-content">
                 Make this material public
@@ -323,7 +324,7 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-2 mt-6">
+          <div className="card-actions flex justify-end gap-2 mt-6">
             {onCancel && (
               <button
                 type="button"
