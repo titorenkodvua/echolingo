@@ -41,6 +41,11 @@ export const DraftForm: React.FC<DraftFormProps> = ({
   const handleCancel = () => {
     console.log('🚫 [DRAFT_FORM] User canceled, stopping polling');
     isComponentActiveRef.current = false;
+    
+    // ✅ Обновляем список материалов при закрытии формы
+    console.log('🔄 [DRAFT_FORM] Invalidating materials cache on cancel');
+    queryClient.invalidateQueries({ queryKey: ['materials'] });
+    
     onCancel?.();
   };
 
@@ -86,6 +91,10 @@ export const DraftForm: React.FC<DraftFormProps> = ({
       if (!draftRes.success || !draftRes.data) throw new Error(draftRes.error || 'Failed to create draft');
       const material = draftRes.data;
       
+      // ✅ Обновляем кеш сразу после создания материала
+      console.log('🔄 [DRAFT_FORM] Invalidating materials cache after draft creation');
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      
       // 2. Upload file
       console.log('🔄 [DRAFT_FORM] Starting file upload for material:', material.id);
       const uploadRes = await materialsApi.uploadFile(material.id, file);
@@ -100,6 +109,10 @@ export const DraftForm: React.FC<DraftFormProps> = ({
       
       console.log('🆔 [DRAFT_FORM] Got predictionId:', predictionId);
       setProgress('transcribing');
+      
+      // ✅ Обновляем кеш после начала транскрипции (статус меняется на 'processing')
+      console.log('🔄 [DRAFT_FORM] Invalidating materials cache after upload start');
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
       
       // 3. Poll transcription status
       let attempts = 0;

@@ -33,6 +33,22 @@ export const MaterialsList: React.FC<MaterialsListProps> = ({ materials, loading
     }
   };
 
+  // ✅ Функция для отображения языка с спиннером если обрабатывается
+  const renderLanguage = (material: Material) => {
+    if (material.status === 'processing' && !material.language) {
+      return <span className="loading loading-spinner loading-xs"></span>;
+    }
+    return material.language || 'N/A';
+  };
+
+  // ✅ Функция для отображения длительности с спиннером если обрабатывается
+  const renderDuration = (material: Material) => {
+    if (material.status === 'processing' && !material.duration) {
+      return <span className="loading loading-spinner loading-xs"></span>;
+    }
+    return material.duration ? formatDuration(material.duration) : 'N/A';
+  };
+
   return (
     <div className={className ? className : ''}>
       <div className="overflow-x-auto rounded-lg shadow bg-base-100 max-w-5xl mx-auto">
@@ -65,10 +81,10 @@ export const MaterialsList: React.FC<MaterialsListProps> = ({ materials, loading
                       {getStatusBadge(material.status)}
                     </div>
                   </td>
-                  <td>{material.language}</td>
+                  <td>{renderLanguage(material)}</td>
                   <td className="whitespace-normal break-words text-xs">{material.targetLanguage.join(', ')}</td>
                   <td>{material.difficultyLevel}</td>
-                  <td className="text-right">{material.duration ? formatDuration(material.duration) : 'N/A'}</td>
+                  <td className="text-right">{renderDuration(material)}</td>
                   <td className="flex gap-2 justify-end text-right">
                     {onEdit && (
                       <Button

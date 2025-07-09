@@ -105,16 +105,18 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
         } },
         {
           onSuccess: (data: any) => {
+            // ✅ useUpdateMaterial уже инвалидирует кэш и показывает toast
             if (data.success && data.data) {
               onPublished?.(data.data);
             } else {
               setError(data.error || 'Failed to save material');
             }
+            setIsSubmitting(false);
           },
           onError: (err: any) => {
             setError(err?.message || 'Unknown error occurred');
-          },
-          onSettled: () => setIsSubmitting(false)
+            setIsSubmitting(false);
+          }
         }
       );
     } else {

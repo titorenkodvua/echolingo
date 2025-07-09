@@ -10,19 +10,23 @@ export function useMaterials() {
     queryKey: MATERIALS_KEY,
     queryFn: () => materialsApi.getAll().then(r => {
       if (!r.success || !r.data) throw new Error(r.error || 'Failed to fetch materials');
-      console.log('📊 [MATERIALS] Fetched materials:', r.data);
+      const processingCount = r.data.materials?.filter(m => m.status === 'processing').length || 0;
+      console.log(`📊 [MATERIALS] Fetched ${r.data.materials?.length || 0} materials (${processingCount} processing)`);
       return r.data;
     }),
-    staleTime: 1 * 60 * 1000, // 1 минута (уменьшено с 5 минут)
+    // ✅ Оставляем глобальные настройки для staleTime и refetchOnWindowFocus
     refetchInterval: (query) => {
-      // Исправлена логика доступа к данным
       const materials = query?.state?.data?.materials;
-      console.log('🔄 [MATERIALS] Checking refetch interval, materials:', materials?.map(m => ({ id: m.id, status: m.status })));
-      
       const hasProcessingMaterials = materials?.some(m => m.status === 'processing');
-      console.log('⏰ [MATERIALS] Has processing materials:', hasProcessingMaterials);
       
-      return hasProcessingMaterials ? 30 * 1000 : false; // 30 секунд или отключено
+      if (!hasProcessingMaterials) {
+        console.log('⏸️ [POLLING] No processing materials, stopping polling');
+        return false;
+      }
+      
+      // ✅ Простое решение: быстрые обновления при наличии processing материалов
+      console.log('⏰ [POLLING] Processing materials found, polling every 3 seconds');
+      return 3 * 1000; // 3 секунды - оптимальный баланс скорости и нагрузки
     },
   });
 }
@@ -64,13 +68,16 @@ export function useUpdateMaterial() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Material> }) => materialsApi.update(id, data),
     onSuccess: (res: ApiResponse<Material>) => {
       if (res.success && res.data) {
+        console.log('✅ [UPDATE] Material updated successfully, invalidating cache');
         toast.success('Material updated');
         queryClient.invalidateQueries({ queryKey: MATERIALS_KEY });
+        console.log('🔄 [CACHE] Cache invalidation triggered for materials');
       } else {
         toast.error(res.error || 'Failed to update material');
       }
     },
     onError: (err: Error) => {
+      console.error('❌ [UPDATE] Update material failed:', err);
       toast.error(err.message);
     },
   });

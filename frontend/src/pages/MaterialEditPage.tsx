@@ -31,7 +31,16 @@ export const MaterialEditPage: React.FC = () => {
     }
   }, [id]);
 
-  const handlePublished = () => {
+  const handlePublished = (updatedMaterial?: Material) => {
+    console.log('📝 [EDIT PAGE] Material published/updated:', updatedMaterial);
+    
+    // ✅ Обновляем локальное состояние с новыми данными
+    if (updatedMaterial) {
+      setMaterial(updatedMaterial);
+      console.log('🔄 [EDIT PAGE] Local material state updated');
+    }
+    
+    // ✅ Навигируем обратно к списку
     navigate(back);
   };
 
