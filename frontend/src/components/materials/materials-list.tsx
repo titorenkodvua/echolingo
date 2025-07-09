@@ -17,13 +17,30 @@ export const MaterialsList: React.FC<MaterialsListProps> = ({ materials, loading
   if (loading) {
     return <LoadingSpinner center text="Loading materials..." />;
   }
+
+  const getStatusBadge = (status: Material['status']) => {
+    switch (status) {
+      case 'draft':
+        return <span className="badge badge-secondary badge-soft w-20 text-center">Draft</span>;
+      case 'processing':
+        return <span className="badge badge-warning badge-soft w-20 text-center">Processing</span>;
+      case 'ready':
+        return <span className="badge badge-info badge-soft w-20 text-center">Ready</span>;
+      case 'published':
+        return <span className="badge badge-success badge-soft w-20 text-center">Published</span>;
+      default:
+        return <span className="badge badge-ghost badge-soft w-20 text-center">{status}</span>;
+    }
+  };
+
   return (
     <div className={className ? className : ''}>
       <div className="overflow-x-auto rounded-lg shadow bg-base-100 max-w-5xl mx-auto">
-        <table className="table table-fixed w-full min-w-[700px]">
-          <thead className="bg-primary text-primary-content">
+        <table className="table table-fixed w-full min-w-[800px]">
+          <thead className="bg-neutral text-neutral-content">
             <tr>
               <th className="w-2/5 max-w-lg min-w-[180px] break-words">Title</th>
+              <th className="w-32 text-center">Status</th>
               <th className="w-24">Language</th>
               <th className="w-32 whitespace-normal">Translation Languages</th>
               <th className="w-20">Level</th>
@@ -34,7 +51,7 @@ export const MaterialsList: React.FC<MaterialsListProps> = ({ materials, loading
           <tbody>
             {(!materials || materials.length === 0) ? (
               <tr>
-                <td colSpan={6} className="text-center text-base-content/60 py-8">
+                <td colSpan={7} className="text-center text-base-content/60 py-8">
                   No materials found.<br />
                   <span className="text-sm text-base-content/40 mt-2 block">Create your first material to get started.</span>
                 </td>
@@ -43,6 +60,11 @@ export const MaterialsList: React.FC<MaterialsListProps> = ({ materials, loading
               materials.map((material) => (
                 <tr key={material.id} className="transition-all duration-500">
                   <td className="font-medium text-base-content max-w-lg min-w-[180px] truncate break-words">{material.title}</td>
+                  <td className="text-center">
+                    <div className="flex justify-center">
+                      {getStatusBadge(material.status)}
+                    </div>
+                  </td>
                   <td>{material.language}</td>
                   <td className="whitespace-normal break-words text-xs">{material.targetLanguage.join(', ')}</td>
                   <td>{material.difficultyLevel}</td>

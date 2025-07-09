@@ -2,11 +2,100 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const DescriptionService = require('../services/descriptionService');
 const { Material, Transcription } = require('../models');
-const { sequelize } = require('../models');
+const { sequelize, Op } = require('../models');
 const upload = require('../middlewares/uploadMiddleware');
+const axios = require('axios');
 
 const router = express.Router();
 const descriptionService = new DescriptionService();
+
+// Функция автоматической проверки статуса транскрипции
+function startTranscriptionPolling(predictionId, mode = 'fast') {
+  console.log(`🤖 [AUTO-POLLING] Starting automatic polling for predictionId: ${predictionId} in ${mode} mode`);
+  
+  // Конфигурация режимов
+  const modes = {
+    fast: { 
+      initialDelay: 5000,      // 5 сек
+      initialInterval: 3000,   // 3 сек
+      laterInterval: 10000,    // 10 сек  
+      switchAfter: 20,         // переход после 20 попыток
+      maxAttempts: 120         // 10 минут
+    },
+    normal: { 
+      initialDelay: 10000,     // 10 сек
+      initialInterval: 5000,   // 5 сек
+      laterInterval: 15000,    // 15 сек
+      switchAfter: 15,         // переход после 15 попыток  
+      maxAttempts: 80          // 8 минут
+    },
+    slow: { 
+      initialDelay: 30000,     // 30 сек
+      initialInterval: 10000,  // 10 сек
+      laterInterval: 30000,    // 30 сек
+      switchAfter: 10,         // переход после 10 попыток
+      maxAttempts: 40          // 10 минут
+    }
+  };
+  
+  const config = modes[mode] || modes.fast;
+  
+  let attempts = 0;
+  const { maxAttempts, switchAfter } = config;
+  let intervalMs = config.initialInterval;
+  let interval;
+  
+  const checkStatus = async () => {
+    attempts++;
+    console.log(`🔍 [AUTO-POLLING] Attempt ${attempts}/${maxAttempts} for predictionId: ${predictionId} (interval: ${intervalMs}ms)`);
+    
+    try {
+      // Вызываем наш собственный endpoint для проверки статуса
+      const response = await axios.get(`http://localhost:${process.env.PORT || 3001}/api/transcription/status/${predictionId}`);
+      
+      if (response.data?.data?.status === 'completed') {
+        console.log(`✅ [AUTO-POLLING] Transcription completed for predictionId: ${predictionId} after ${attempts} attempts`);
+        if (interval) clearInterval(interval);
+        return;
+      }
+      
+      if (response.data?.data?.status === 'failed') {
+        console.log(`❌ [AUTO-POLLING] Transcription failed for predictionId: ${predictionId}`);
+        if (interval) clearInterval(interval);
+        return;
+      }
+      
+      if (attempts >= maxAttempts) {
+        console.log(`⏰ [AUTO-POLLING] Max attempts reached for predictionId: ${predictionId}, stopping polling`);
+        if (interval) clearInterval(interval);
+        return;
+      }
+      
+      // Адаптивный интервал: увеличиваем время ожидания после switchAfter попыток
+      if (attempts > switchAfter && intervalMs < config.laterInterval) {
+        if (interval) clearInterval(interval);
+        intervalMs = config.laterInterval;
+        console.log(`🔄 [AUTO-POLLING] Switching to ${intervalMs}ms interval for predictionId: ${predictionId}`);
+        interval = setInterval(checkStatus, intervalMs);
+      }
+      
+    } catch (error) {
+      console.error(`❌ [AUTO-POLLING] Error checking status for predictionId: ${predictionId}:`, error.message);
+      
+      if (attempts >= maxAttempts) {
+        console.log(`⏰ [AUTO-POLLING] Max attempts reached due to errors for predictionId: ${predictionId}, stopping polling`);
+        if (interval) clearInterval(interval);
+        return;
+      }
+    }
+  };
+  
+  // Первая проверка с задержкой согласно режиму
+  setTimeout(() => {
+    interval = setInterval(checkStatus, intervalMs);
+    checkStatus(); // Первая проверка сразу
+  }, config.initialDelay);
+}
 
 /**
  * @swagger
@@ -362,13 +451,25 @@ router.get('/drafts', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const userId = req.query.userId || 'anonymous';
-    const { status = 'published', limit = 50, offset = 0 } = req.query;
+    const { status, limit = 50, offset = 0 } = req.query;
+
+    // Если статус не указан, показываем все материалы кроме удаленных
+    let whereClause = {
+      userId: userId
+    };
+
+    if (status) {
+      // Если статус указан явно, фильтруем по нему
+      whereClause.status = status;
+    } else {
+      // Если статус не указан, показываем все кроме deleted
+      whereClause.status = {
+        [Op.ne]: 'deleted'
+      };
+    }
 
     const userMaterials = await Material.findAll({
-      where: {
-        userId: userId,
-        status: status
-      },
+      where: whereClause,
       include: [{ model: Transcription, as: 'transcription' }],
       order: [['updatedAt', 'DESC']]
     });
@@ -1136,6 +1237,16 @@ router.put('/:materialId/upload-file', upload.single('audio'), async (req, res) 
     material.transcriptionId = transcription.id;
     await material.save();
 
+    // Запускаем автоматическую проверку статуса транскрипции (включено по умолчанию для надежности)
+    const autoPolling = req.body.autoPolling !== 'false'; // По умолчанию ВКЛЮЧЕНО
+    if (autoPolling) {
+      const pollingMode = req.body.pollingMode || 'normal'; // 'fast' | 'normal' | 'slow'
+      startTranscriptionPolling(transcriptionResult.id, pollingMode);
+      console.log(`🤖 [AUTO-POLLING] Started with mode: ${pollingMode} for predictionId: ${transcriptionResult.id}`);
+    } else {
+      console.log(`⏭️ [AUTO-POLLING] Disabled for predictionId: ${transcriptionResult.id}`);
+    }
+
     res.json({
       success: true,
       message: 'File uploaded and transcription started',
@@ -1244,4 +1355,5 @@ router.put('/:materialId/publish', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
+module.exports.startTranscriptionPolling = startTranscriptionPolling; 

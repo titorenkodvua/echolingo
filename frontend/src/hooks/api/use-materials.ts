@@ -10,8 +10,20 @@ export function useMaterials() {
     queryKey: MATERIALS_KEY,
     queryFn: () => materialsApi.getAll().then(r => {
       if (!r.success || !r.data) throw new Error(r.error || 'Failed to fetch materials');
+      console.log('📊 [MATERIALS] Fetched materials:', r.data);
       return r.data;
     }),
+    staleTime: 1 * 60 * 1000, // 1 минута (уменьшено с 5 минут)
+    refetchInterval: (query) => {
+      // Исправлена логика доступа к данным
+      const materials = query?.state?.data?.materials;
+      console.log('🔄 [MATERIALS] Checking refetch interval, materials:', materials?.map(m => ({ id: m.id, status: m.status })));
+      
+      const hasProcessingMaterials = materials?.some(m => m.status === 'processing');
+      console.log('⏰ [MATERIALS] Has processing materials:', hasProcessingMaterials);
+      
+      return hasProcessingMaterials ? 30 * 1000 : false; // 30 секунд или отключено
+    },
   });
 }
 

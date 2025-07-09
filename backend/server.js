@@ -72,6 +72,42 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Импортируем функцию polling из routes/materials.js
+const { startTranscriptionPolling } = require('./routes/materials');
+
+// Функция для восстановления polling незавершенных транскрипций
+async function restorePollingOnStartup() {
+  try {
+    const { Transcription } = require('./models');
+    
+    // Находим все транскрипции в статусах 'pending' или 'processing'
+    const pendingTranscriptions = await Transcription.findAll({
+      where: {
+        status: ['pending', 'processing', 'submitted']
+      },
+      attributes: ['gladiaId', 'status', 'createdAt']
+    });
+
+    console.log(`🔄 [STARTUP] Found ${pendingTranscriptions.length} pending/processing transcriptions`);
+
+    for (const transcription of pendingTranscriptions) {
+      // Проверяем, не слишком ли старая транскрипция (старше 1 часа)
+      const createdAt = new Date(transcription.createdAt);
+      const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      
+      if (createdAt < hourAgo) {
+        console.log(`⏰ [STARTUP] Skipping old transcription: ${transcription.gladiaId} (${transcription.status})`);
+        continue;
+      }
+
+      console.log(`🤖 [STARTUP] Restoring polling for: ${transcription.gladiaId} (${transcription.status})`);
+      startTranscriptionPolling(transcription.gladiaId, 'normal');
+    }
+  } catch (error) {
+    console.error('❌ [STARTUP] Failed to restore polling:', error);
+  }
+}
+
 // Запуск cron-задачи для автоматической очистки неоконченных материалов
 require('./cron/cleanupJob');
 
@@ -80,6 +116,9 @@ const startServer = async () => {
   try {
     // Инициализируем базу данных
     await initializeDatabase();
+    
+    // Восстанавливаем polling для незавершенных транскрипций
+    await restorePollingOnStartup();
     
     // Запускаем сервер
     app.listen(PORT, () => {

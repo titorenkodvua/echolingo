@@ -329,8 +329,21 @@ router.get('/status/:predictionId', async (req, res) => {
     
     console.log(`🔄 [DEBUG] Status mapping: ${status.status} -> ${internalStatus}`);
     
-    // Обновляем статус в БД
-    if (internalStatus !== transcription.status || (internalStatus === 'completed' && !transcription.sentences)) {
+    // Обновляем статус в БД и/или недостающие поля
+    const needsStatusUpdate = internalStatus !== transcription.status;
+    const needsDataUpdate = internalStatus === 'completed' && (!transcription.sentences || !transcription.duration || !transcription.summary);
+    
+    console.log(`🔍 [DEBUG] Update conditions:`, {
+      needsStatusUpdate,
+      needsDataUpdate,
+      currentStatus: transcription.status,
+      newStatus: internalStatus,
+      hasSentences: !!transcription.sentences,
+      hasDuration: !!transcription.duration,
+      hasSummary: !!transcription.summary
+    });
+    
+    if (needsStatusUpdate || needsDataUpdate) {
       console.log(`📝 [DEBUG] Need to update transcription in DB`);
       
       let updateData = {
@@ -364,9 +377,19 @@ router.get('/status/:predictionId', async (req, res) => {
           avoidSmallSegments: true
         };
         const segmented = segmentationService.segmentTranscription(processedData, defaultSegmentationParams);
+        // Добавляем детальное логирование для отладки
+        console.log(`🔍 [DEBUG] Gladia result structure for duration/summary:`, {
+          hasMetadata: !!status.result.metadata,
+          metadataKeys: status.result.metadata ? Object.keys(status.result.metadata) : null,
+          audioDuration: status.result.metadata?.audio_duration,
+          hasSummarization: !!status.result.summarization,
+          summarizationKeys: status.result.summarization ? Object.keys(status.result.summarization) : null,
+          summarizationResults: status.result.summarization?.results
+        });
+
         updateData = {
           ...updateData,
-          language: processedData.language,
+          // Язык больше не сохраняем в Transcription - только в Material
           full_transcript: processedData.full_transcript,
           count_of_speakers: processedData.count_of_speakers,
           translation: processedData.translation,
@@ -380,13 +403,14 @@ router.get('/status/:predictionId', async (req, res) => {
         
         console.log(`💾 [DEBUG] Final updateData:`, {
           status: updateData.status,
-          language: updateData.language,
           fullTranscriptLength: updateData.full_transcript?.length || 0,
           sentencesCount: updateData.sentences?.length || 0,
           translationCount: updateData.translation?.length || 0,
           countOfSpeakers: updateData.count_of_speakers,
           hasDuration: !!updateData.duration,
-          hasSummary: !!updateData.summary
+          durationValue: updateData.duration,
+          hasSummary: !!updateData.summary,
+          summaryValue: updateData.summary ? updateData.summary.substring(0, 100) + '...' : null
         });
 
         const updatedTranscription = await transcription.update(updateData);
@@ -411,12 +435,27 @@ router.get('/status/:predictionId', async (req, res) => {
           } : 'NOT FOUND');
           if (material) {
             let updated = false;
+            console.log(`🔍 [DEBUG] Material current state:`, {
+              status: material.status,
+              language: material.language,
+              duration: material.duration,
+              hasDescription: !!material.description,
+              descriptionLength: material.description?.length || 0
+            });
+            console.log(`🔍 [DEBUG] Data to update with:`, {
+              processedLanguage: processedData.language,
+              updateDataDuration: updateData.duration,
+              updateDataSummary: updateData.summary ? 'HAS_SUMMARY' : 'NO_SUMMARY'
+            });
+            
             // Обновление статуса и языка
             if (material.status === 'processing') {
               material.status = 'ready';
               updated = true;
+              console.log('[DEBUG] Material status updated to ready');
             }
             if (material.language !== processedData.language) {
+              console.log(`[DEBUG] Language change: ${material.language} -> ${processedData.language}`);
               material.language = processedData.language || 'unknown';
               updated = true;
             }
@@ -434,13 +473,22 @@ router.get('/status/:predictionId', async (req, res) => {
               (!material.duration || material.duration === 0) &&
               updateData.duration
             ) {
+              console.log(`[DEBUG] Duration change: ${material.duration} -> ${updateData.duration}`);
               material.duration = updateData.duration;
               updated = true;
               console.log('[DEBUG] Material duration auto-filled from transcription duration');
             }
             if (updated) {
               await material.save();
-              console.log(`✅ [DEBUG] Material updated:`, { id: material.id, status: material.status, language: material.language, description: material.description });
+              console.log(`✅ [DEBUG] Material updated:`, { 
+                id: material.id, 
+                status: material.status, 
+                language: material.language, 
+                duration: material.duration,
+                description: material.description ? material.description.substring(0, 50) + '...' : null
+              });
+            } else {
+              console.log(`⏭️ [DEBUG] Material not updated - no changes needed`);
             }
           } else {
             console.log(`❌ [DEBUG] No material found with transcriptionId: ${transcription.id}`);

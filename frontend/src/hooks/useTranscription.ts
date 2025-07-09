@@ -47,10 +47,17 @@ export const useTranscription = () => {
         try {
           const statusResponse = await transcriptionApi.wait(predictionId);
           
+          console.log('📊 [FRONTEND] Status response:', statusResponse);
+          
           if (statusResponse.success && statusResponse.data) {
-            const status = statusResponse.data.status || statusResponse.data.data?.status;
+            // Правильная структура ответа: statusResponse.data.status
+            const status = statusResponse.data.status;
             
-            if (status === 'done') {
+            console.log(`📈 [FRONTEND] Current status: ${status}`);
+            
+            if (status === 'completed') {  // ✅ Правильный статус
+              console.log('✅ [FRONTEND] Transcription completed!');
+              
               // Get final transcription
               const finalResponse = await transcriptionApi.getById(transcriptionId);
               
@@ -64,6 +71,11 @@ export const useTranscription = () => {
                 setIsProcessing(false);
                 return finalResponse.data;
               }
+            } else if (status === 'failed' || status === 'error') {
+              console.log(`❌ [FRONTEND] Transcription failed with status: ${status}`);
+              throw new Error(`Transcription failed: ${status}`);
+            } else {
+              console.log(`⏳ [FRONTEND] Status: ${status}, continuing polling...`);
             }
           }
         } catch (err) {

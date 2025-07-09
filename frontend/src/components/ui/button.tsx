@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'error' | 'success';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'error' | 'success' | 'accent';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: React.ReactNode;
@@ -17,6 +17,7 @@ const variantMap = {
   ghost: 'btn-ghost',
   error: 'btn-error',
   success: 'btn-success',
+  accent: 'btn-accent',
 };
 
 const sizeMap = {

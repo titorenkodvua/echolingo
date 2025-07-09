@@ -65,7 +65,7 @@ export const HomePage: React.FC = () => {
     if (error) toast.error(error.message);
   }, [error, toast]);
 
-  const publishedMaterials = data?.materials?.filter(m => m.status !== 'draft') || [];
+  const publishedMaterials = data?.materials || [];  // ✅ Показываем все материалы
 
   const handleEdit = (material) => {
     navigate(`/materials/${material.id}/edit`);
@@ -77,9 +77,16 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  const handleDraftCreated = (material) => {
+  const handleDraftCreated = (material, shouldNavigateToEdit = false) => {
     setShowCreateModal(false);
-    navigate(`/materials/${material.id}/edit`);
+    
+    // Только если явно указано - переходим к редактированию  
+    if (shouldNavigateToEdit) {
+      navigate(`/materials/${material.id}/edit`);
+    }
+    
+    // Всегда обновляем список материалов
+    refetch();
   };
 
   return (
@@ -104,34 +111,36 @@ export const HomePage: React.FC = () => {
             Create language learning materials with automatic transcription
           </p>
         </div>
-          {/* Published Materials */}
+          {/* All Materials */}
           <div>
             <div className="flex justify-between items-center mb-4 px-2">
               <h2 className="text-xl font-semibold text-base-content">
-                Published Materials
+                All Materials
               </h2>
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
-                  variant="ghost"
+                  variant="accent"
                   aria-label="Создать материал"
                   onClick={() => setShowCreateModal(true)}
                   icon={<Plus className="w-5 h-5" />}
                   noIconMargin
-                  className="btn-square"
+                  title="Add material"
                 >
-                  <span className="sr-only">Add</span>
+                  Add
                 </Button>
                 <Button
                   size="sm"
-                  variant="ghost"
+                  variant="primary"
                   onClick={() => refetch()}
                   disabled={isLoading}
-                  aria-label="Обновить"
+                  aria-label="Refresh"
                   loading={isLoading}
                   icon={<RotateCcw className="w-5 h-5" />}
-                  className="btn-square"
-                />
+                  title="Refresh materials list"
+                >
+                  Refresh
+                </Button>
               </div>
             </div>
             <MaterialsList

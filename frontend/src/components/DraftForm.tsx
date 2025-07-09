@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { materialsApi, transcriptionApi } from '../utils/api';
 import type { Material } from '../types';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DraftFormProps {
-  onDraftCreated?: (material: Material) => void;
+  onDraftCreated?: (material: Material, shouldNavigateToEdit?: boolean) => void;
   onCancel?: () => void;
 }
 
@@ -21,6 +22,27 @@ export const DraftForm: React.FC<DraftFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<'idle' | 'uploading' | 'transcribing' | 'done'>('idle');
+  
+  // ✅ Добавляем ref для отслеживания активности компонента
+  const isComponentActiveRef = React.useRef(true);
+  
+  const queryClient = useQueryClient();
+
+  // ✅ Очищаем ref только при размонтировании, не при ре-рендерах
+  React.useEffect(() => {
+    isComponentActiveRef.current = true; // ✅ Устанавливаем в true при монтировании
+    return () => {
+      console.log('🔴 [DRAFT_FORM] Component is unmounting, setting active to false');
+      isComponentActiveRef.current = false;
+    };
+  }, []); // ✅ Пустой массив зависимостей!
+
+  // ✅ Функция отмены с остановкой поллинга
+  const handleCancel = () => {
+    console.log('🚫 [DRAFT_FORM] User canceled, stopping polling');
+    isComponentActiveRef.current = false;
+    onCancel?.();
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -63,36 +85,96 @@ export const DraftForm: React.FC<DraftFormProps> = ({
       });
       if (!draftRes.success || !draftRes.data) throw new Error(draftRes.error || 'Failed to create draft');
       const material = draftRes.data;
+      
       // 2. Upload file
+      console.log('🔄 [DRAFT_FORM] Starting file upload for material:', material.id);
       const uploadRes = await materialsApi.uploadFile(material.id, file);
+      console.log('📤 [DRAFT_FORM] Upload response:', uploadRes);
+      
       if (!uploadRes.success || !uploadRes.data) throw new Error(uploadRes.error || 'Failed to upload file');
       const predictionId = uploadRes.data.predictionId;
+      
+      if (!predictionId) {
+        throw new Error('No predictionId received from upload');
+      }
+      
+      console.log('🆔 [DRAFT_FORM] Got predictionId:', predictionId);
       setProgress('transcribing');
+      
       // 3. Poll transcription status
       let attempts = 0;
       const maxAttempts = 60;
       let status = '';
-      while (attempts < maxAttempts) {
+      
+      while (attempts < maxAttempts && isComponentActiveRef.current) { // ✅ Проверяем активность компонента
         attempts++;
+        console.log(`🔍 [DRAFT_FORM] Polling attempt ${attempts}/${maxAttempts} (active: ${isComponentActiveRef.current})`);
+        
         const statusRes = await transcriptionApi.wait(predictionId);
+        console.log('📊 [DRAFT_FORM] Status response:', statusRes);
+        
         if (statusRes.success && statusRes.data) {
           status = statusRes.data.status || statusRes.data.data?.status;
-          if (status === 'done') break;
+          console.log(`📈 [DRAFT_FORM] Current status: ${status}`);
+          
+          if (status === 'completed') {
+            console.log('✅ [DRAFT_FORM] Transcription completed!');
+            break;
+          } else if (status === 'failed' || status === 'error') {
+            console.log(`❌ [DRAFT_FORM] Transcription failed with status: ${status}`);
+            throw new Error(`Transcription failed: ${status}`);
+          } else {
+            console.log(`⏳ [DRAFT_FORM] Status: ${status}, continuing...`);
+          }
         }
+        
+        // ✅ Проверяем активность перед ожиданием
+        if (!isComponentActiveRef.current) {
+          console.log('🚫 [DRAFT_FORM] Component unmounted, stopping polling');
+          return;
+        }
+        
         await new Promise(res => setTimeout(res, 5000));
       }
-      if (status !== 'done') throw new Error('Transcription timeout');
+      
+      // ✅ Проверяем активность перед завершением
+      if (!isComponentActiveRef.current) {
+        console.log('🚫 [DRAFT_FORM] Component unmounted, canceling completion');
+        return;
+      }
+      
+      if (status !== 'completed') {
+        console.log(`❌ [DRAFT_FORM] Timeout! Final status: ${status}`);
+        throw new Error('Transcription timeout');
+      }
+      
       setProgress('done');
+      
       // 4. Get updated material
       const matRes = await materialsApi.getById(material.id);
       if (!matRes.success || !matRes.data) throw new Error(matRes.error || 'Failed to fetch material');
-      onDraftCreated?.(matRes.data);
+      
+      // ✅ Принудительно обновляем кеш материалов
+      console.log('🔄 [DRAFT_FORM] Invalidating materials cache after transcription completion');
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      
+      // ✅ Вызываем колбэк только если компонент все еще активен
+      if (isComponentActiveRef.current) {
+        onDraftCreated?.(matRes.data, true); // ✅ Указываем, что нужно перейти к редактированию
+      } else {
+        console.log('🚫 [DRAFT_FORM] Component unmounted, skipping navigation');
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(errorMessage);
-      setProgress('idle');
+      // ✅ Показываем ошибку только если компонент активен
+      if (isComponentActiveRef.current) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        setError(errorMessage);
+        setProgress('idle');
+      }
     } finally {
-      setIsSubmitting(false);
+      if (isComponentActiveRef.current) {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -176,7 +258,7 @@ export const DraftForm: React.FC<DraftFormProps> = ({
         )}
         <div className="flex justify-end gap-2 mt-6">
           {onCancel && (
-            <button type="button" className="btn btn-outline" onClick={onCancel} disabled={isSubmitting || progress !== 'idle'}>Cancel</button>
+            <button type="button" className="btn btn-outline" onClick={handleCancel} disabled={isSubmitting || progress !== 'idle'}>Cancel</button>
           )}
           <button type="submit" className="btn btn-primary" disabled={isSubmitting || progress !== 'idle'}>
             {isSubmitting || progress !== 'idle' ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}Create Material

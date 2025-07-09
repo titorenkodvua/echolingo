@@ -47,19 +47,23 @@ const defineTranscription = (sequelize) => {
     // Дополнительные поля для совместимости
     duration: {
       type: DataTypes.FLOAT,
-      allowNull: true
+      allowNull: true,
+      comment: 'Длительность аудио в секундах'
     },
     summary: {
       type: DataTypes.TEXT,
-      allowNull: true
+      allowNull: true,
+      comment: 'Краткое содержание транскрипции'
     },
     diarization: {
       type: DataTypes.JSON,
-      allowNull: true
+      allowNull: true,
+      comment: 'Данные диаризации (разделение по говорящим)'
     },
     metadata: {
       type: DataTypes.JSON,
-      allowNull: true
+      allowNull: true,
+      comment: 'Метаданные от Gladia API'
     },
     errorMessage: {
       type: DataTypes.TEXT,

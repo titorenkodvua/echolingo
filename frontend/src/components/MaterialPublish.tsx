@@ -3,6 +3,8 @@ import { Save, Loader2, Eye, EyeOff } from 'lucide-react';
 import { materialsApi } from '../utils/api';
 import type { Material, Transcription } from '../types';
 import { SegmentedTranscriptionView } from './SegmentedTranscriptionView';
+import { useUpdateMaterial } from '../hooks/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface MaterialPublishProps {
   material: Material;
@@ -39,6 +41,22 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
   const isDraft = material.status === 'draft';
   const mode = isPublished ? 'edit' : 'publish';
 
+  const updateMaterial = useUpdateMaterial();
+  const queryClient = useQueryClient();
+  const publishMaterialMutation = useMutation({
+    mutationFn: (data: any) => materialsApi.publishMaterial(material.id, data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      if (response.success && response.data) {
+        onPublished?.(response.data);
+      }
+    },
+    onError: (err: any) => {
+      setError(err?.message || 'Unknown error occurred');
+    },
+    onSettled: () => setIsSubmitting(false),
+  });
+
   // Если transcription не передан, пробуем загрузить его по material.transcriptionId
   useEffect(() => {
     let ignore = false;
@@ -72,14 +90,11 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     setIsSubmitting(true);
     setError(null);
-
-    try {
-      let response;
-      if (mode === 'edit') {
-        response = await materialsApi.update(material.id, {
+    if (mode === 'edit') {
+      updateMaterial.mutate(
+        { id: material.id, data: {
           title: formData.title,
           description: formData.description,
           tags: formData.tags,
@@ -87,9 +102,23 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
           category: formData.category,
           isPublic: formData.isPublic,
           recommendedRepetitions: formData.recommendedRepetitions
-        });
-      } else {
-        response = await materialsApi.publishMaterial(material.id, {
+        } },
+        {
+          onSuccess: (data: any) => {
+            if (data.success && data.data) {
+              onPublished?.(data.data);
+            } else {
+              setError(data.error || 'Failed to save material');
+            }
+          },
+          onError: (err: any) => {
+            setError(err?.message || 'Unknown error occurred');
+          },
+          onSettled: () => setIsSubmitting(false)
+        }
+      );
+    } else {
+      publishMaterialMutation.mutate({
         title: formData.title,
         description: formData.description,
         tags: formData.tags,
@@ -98,18 +127,6 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
         isPublic: formData.isPublic,
         recommendedRepetitions: formData.recommendedRepetitions
       });
-      }
-      
-      if (response.success && response.data) {
-        onPublished?.(response.data);
-      } else {
-        throw new Error(response.error || 'Failed to save material');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(errorMessage);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

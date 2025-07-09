@@ -1,4 +1,4 @@
-const { Sequelize } = require('sequelize');
+const { Sequelize, Op } = require('sequelize');
 const path = require('path');
 
 // Создаем экземпляр Sequelize с SQLite
@@ -67,6 +67,7 @@ const initializeDatabase = async () => {
 
 module.exports = {
   sequelize,
+  Op,
   initializeDatabase,
   Material,
   Transcription,

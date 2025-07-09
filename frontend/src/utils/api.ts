@@ -30,7 +30,9 @@ export const transcriptionApi = {
 
   // Wait for transcription completion
   wait: async (predictionId: string): Promise<ApiResponse<any>> => {
-    const response = await api.get(`/transcription/wait/${predictionId}`);
+    console.log(`🚀 [API] Calling /transcription/status/${predictionId}`);
+    const response = await api.get(`/transcription/status/${predictionId}`);
+    console.log(`📨 [API] Response for ${predictionId}:`, response.data);
     return response.data;
   },
 
@@ -59,6 +61,7 @@ export const materialsApi = {
   uploadFile: async (materialId: string, file: File, language?: string): Promise<ApiResponse<{ materialId: string; predictionId: string; status: string }>> => {
     const formData = new FormData();
     formData.append('audio', file);
+    formData.append('autoPolling', 'true'); // ✅ Включаем auto-polling backend
     if (language) {
       formData.append('options', JSON.stringify({ language }));
     }
