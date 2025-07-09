@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
 import { MaterialsList } from '../components/materials';
 import { useMaterials, useDeleteMaterial } from '../hooks/api';
-import { Button } from '../components/ui';
+import { Button, ConfirmDialog } from '../components/ui';
 import { useToast } from '../providers/toast-provider';
 import { useNavigate } from 'react-router-dom';
 import { DraftForm } from '../components/DraftForm';
+import type { Material } from '../types';
 
 // ThemeController — DaisyUI theme switcher (absolute top-right, новые иконки)
 const ThemeController: React.FC = () => {
@@ -60,6 +61,13 @@ export const HomePage: React.FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    material: Material | null;
+  }>({
+    isOpen: false,
+    material: null
+  });
 
   React.useEffect(() => {
     if (error) toast.error(error.message);
@@ -67,17 +75,35 @@ export const HomePage: React.FC = () => {
 
   const publishedMaterials = data?.materials || [];  // ✅ Показываем все материалы
 
-  const handleEdit = (material) => {
+  const handleEdit = (material: Material) => {
     navigate(`/materials/${material.id}/edit`);
   };
 
-  const handleDelete = (material) => {
-    if (window.confirm(`Delete material "${material.title}"? Это действие необратимо.`)) {
-      deleteMaterial.mutate(material.id);
+  const handleDelete = (material: Material) => {
+    setDeleteDialog({
+      isOpen: true,
+      material
+    });
+  };
+
+  const confirmDelete = () => {
+    if (deleteDialog.material) {
+      deleteMaterial.mutate(deleteDialog.material.id, {
+        onSuccess: () => {
+          setDeleteDialog({ isOpen: false, material: null });
+        },
+        onError: () => {
+          setDeleteDialog({ isOpen: false, material: null });
+        }
+      });
     }
   };
 
-  const handleDraftCreated = (material, shouldNavigateToEdit = false) => {
+  const cancelDelete = () => {
+    setDeleteDialog({ isOpen: false, material: null });
+  };
+
+  const handleDraftCreated = (material: Material, shouldNavigateToEdit = false) => {
     setShowCreateModal(false);
     
     // Только если явно указано - переходим к редактированию  
@@ -121,7 +147,7 @@ export const HomePage: React.FC = () => {
                 <Button
                   size="sm"
                   variant="accent"
-                  aria-label="Создать материал"
+                  aria-label="Create material"
                   onClick={() => setShowCreateModal(true)}
                   icon={<Plus className="w-5 h-5" />}
                   noIconMargin
@@ -152,7 +178,8 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* Модальное окно для создания материала */}
+
+      {/* Modal for creating material */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-base-100 rounded-lg shadow-lg max-w-md w-full relative animate-fade-in">
@@ -164,13 +191,26 @@ export const HomePage: React.FC = () => {
               onClick={() => setShowCreateModal(false)}
               className="absolute top-4 right-4 text-base-content/40 hover:text-base-content text-2xl font-bold focus:outline-none"
               title="Close"
-              aria-label="Закрыть"
+              aria-label="Close"
             >
               ×
             </button>
           </div>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        title="Delete Material"
+        message={`Are you sure you want to delete "${deleteDialog.material?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        isLoading={deleteMaterial.isPending}
+        variant="danger"
+      />
     </div>
   );
 }; 
