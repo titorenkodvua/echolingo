@@ -21,6 +21,7 @@ const speakerColors = [
 
 export const SegmentedTranscriptionView: React.FC<SegmentedTranscriptionViewProps> = ({ transcription }) => {
   const [hoveredSegmentId, setHoveredSegmentId] = useState<string | null>(null);
+  const [hoveredUtteranceId, setHoveredUtteranceId] = useState<string | null>(null);
   
   // Собираем все utterances в один массив
   const allUtterances = transcription.sentences?.flatMap(s => s.utterances) || [];
@@ -71,8 +72,8 @@ export const SegmentedTranscriptionView: React.FC<SegmentedTranscriptionViewProp
           >
             {/* Аватар - кружочек с номером спикера */}
             <div className="chat-image avatar">
-              <div className={`w-10 h-10 rounded-full ${speakerColor} flex items-center justify-center text-center`}>
-                <span className="text-base-100 font-bold text-2xl leading-none w-full h-full flex items-center justify-center">
+              <div className={`w-8 h-8 rounded-full ${speakerColor} flex items-center justify-center text-center`}>
+                <span className="text-base-100 font-bold text-xl leading-none w-full h-full flex items-center justify-center">
                   {replica.speaker + 1}
                 </span>
               </div>
@@ -83,17 +84,26 @@ export const SegmentedTranscriptionView: React.FC<SegmentedTranscriptionViewProp
               <div>
                 {replica.utterances.map((utt, idx) => {
                   const isSegmentHighlighted = hoveredSegmentId === utt.segmentId;
+                  const isUtteranceHovered = hoveredUtteranceId === utt.uttId;
                   
                   return (
                     <span 
                       key={utt.uttId}
                       className={`transition-colors duration-200 cursor-pointer rounded-sm ${
-                        isSegmentHighlighted
-                          ? 'bg-primary/20 text-primary-content'
+                        isUtteranceHovered
+                          ? 'bg-primary/60 text-primary-content'
+                          : isSegmentHighlighted
+                          ? 'bg-primary/30 text-primary-content'
                           : 'hover:bg-base-200'
                       }`}
-                      onMouseEnter={() => setHoveredSegmentId(utt.segmentId)}
-                      onMouseLeave={() => setHoveredSegmentId(null)}
+                      onMouseEnter={() => {
+                        setHoveredSegmentId(utt.segmentId);
+                        setHoveredUtteranceId(utt.uttId);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredSegmentId(null);
+                        setHoveredUtteranceId(null);
+                      }}
                     >
                       {utt.isSegmentStart && idx > 0 ? ' ' : ''}
                       {utt.text}
