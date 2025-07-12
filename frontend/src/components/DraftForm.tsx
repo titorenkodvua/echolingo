@@ -192,8 +192,8 @@ export const DraftForm: React.FC<DraftFormProps> = ({
   };
 
   return (
-    <div className="rounded-lg p-6 max-w-md mx-auto">
-      <h2 className="text-xl font-semibold text-base-content mb-6">Create New Material</h2>
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold text-base-content">Create New Material</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-base-content mb-2">Title</label>
@@ -269,7 +269,7 @@ export const DraftForm: React.FC<DraftFormProps> = ({
             {progress === 'uploading' && <Loader2 className="animate-spin w-4 h-4" />} Uploading & Transcribing...
           </div>
         )}
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="modal-action">
           {onCancel && (
             <button type="button" className="btn btn-outline" onClick={handleCancel} disabled={isSubmitting || progress !== 'idle'}>Cancel</button>
           )}

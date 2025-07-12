@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
 import { MaterialsList } from '../components/materials';
 import { useMaterials, useDeleteMaterial } from '../hooks/api';
-import { Button, ConfirmDialog } from '../components/ui';
+import { Button, CreateMaterialModal } from '../components/ui';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { useToast } from '../providers/toast-provider';
 import { useNavigate } from 'react-router-dom';
-import { DraftForm } from '../components/DraftForm';
 import type { Material } from '../types';
 
 // ThemeController — DaisyUI theme switcher (absolute top-right, новые иконки)
@@ -179,25 +179,12 @@ export const HomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal for creating material */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-base-100 rounded-lg shadow-lg max-w-md w-full relative animate-fade-in">
-            <DraftForm
-              onDraftCreated={handleDraftCreated}
-              onCancel={() => setShowCreateModal(false)}
-            />
-            <button
-              onClick={() => setShowCreateModal(false)}
-              className="absolute top-4 right-4 text-base-content/40 hover:text-base-content text-2xl font-bold focus:outline-none"
-              title="Close"
-              aria-label="Close"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Create Material Modal */}
+      <CreateMaterialModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onDraftCreated={handleDraftCreated}
+      />
 
       {/* Delete confirmation dialog */}
       <ConfirmDialog
