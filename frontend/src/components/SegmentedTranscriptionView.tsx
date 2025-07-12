@@ -89,7 +89,7 @@ export const SegmentedTranscriptionView: React.FC<SegmentedTranscriptionViewProp
                       key={utt.uttId}
                       className={`transition-colors duration-200 cursor-pointer rounded-sm ${
                         isSegmentHighlighted
-                          ? 'bg-primary/20'
+                          ? 'bg-primary/20 text-primary-content'
                           : 'hover:bg-base-200'
                       }`}
                       onMouseEnter={() => setHoveredSegmentId(utt.segmentId)}
