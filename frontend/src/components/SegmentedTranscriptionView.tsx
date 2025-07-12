@@ -5,13 +5,16 @@ interface SegmentedTranscriptionViewProps {
   transcription: Transcription;
 }
 
-// Цвета для разных спикеров (с поддержкой dark mode)
-const speakerBgColors = [
-  'bg-blue-50 dark:bg-blue-900',   // speaker 0
-  'bg-green-50 dark:bg-green-900', // speaker 1
-  'bg-yellow-50 dark:bg-yellow-900', // speaker 2
-  'bg-purple-50 dark:bg-purple-900', // speaker 3
-  'bg-pink-50 dark:bg-pink-900',   // speaker 4
+// Пастельные цвета для кружочков спикеров
+const speakerColors = [
+  'bg-blue-300',    // speaker 0
+  'bg-green-300',   // speaker 1
+  'bg-yellow-300',  // speaker 2
+  'bg-purple-300',  // speaker 3
+  'bg-pink-300',    // speaker 4
+  'bg-red-300',     // speaker 5
+  'bg-indigo-300',  // speaker 6
+  'bg-orange-300',  // speaker 7
 ];
 
 export const SegmentedTranscriptionView: React.FC<SegmentedTranscriptionViewProps> = ({ transcription }) => {
@@ -21,6 +24,7 @@ export const SegmentedTranscriptionView: React.FC<SegmentedTranscriptionViewProp
   // Группируем utterances в сегменты по is_segment_start
   const segments: { id: string; utterances: string[]; speaker: number }[] = [];
   let currentSegment: { id: string; utterances: string[]; speaker: number } | null = null;
+  
   allUtterances.forEach(utt => {
     if (utt.is_segment_start || !currentSegment) {
       currentSegment = { id: utt.id, utterances: [], speaker: utt.speaker };
@@ -30,25 +34,31 @@ export const SegmentedTranscriptionView: React.FC<SegmentedTranscriptionViewProp
   });
 
   return (
-    <div className="space-y-4 mt-6">
+    <div>
       {segments.map((segment, i) => {
-        const bgColor = speakerBgColors[segment.speaker % speakerBgColors.length] || 'bg-base-100';
+        const speakerColor = speakerColors[segment.speaker % speakerColors.length];
+        
         return (
           <div
             key={segment.id}
-            className={`card card-bordered shadow-sm ${bgColor}`}
+            className="chat chat-start"
           >
-            <div className="card-body p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`badge badge-outline badge-lg`}>Speaker {segment.speaker + 1}</span>
+            {/* Аватар - кружочек с номером спикера */}
+            <div className="chat-image avatar">
+              <div className={`w-10 h-10 rounded-full ${speakerColor} flex items-center justify-center text-center`}>
+                <span className="text-base-100 font-bold text-2xl leading-none w-full h-full flex items-center justify-center">
+                  {segment.speaker + 1}
+                </span>
               </div>
-              <div className="flex flex-wrap gap-2">
+            </div>
+            
+            {/* Сообщение */}
+            <div className="chat-bubble bg-base-100 max-w-lg py-4">
+              <div>
                 {segment.utterances.map((utt, idx) => (
-                  <span
-                    key={idx}
-                    className="badge badge-neutral badge-lg transition-colors duration-150 cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-700"
-                  >
+                  <span key={idx}>
                     {utt}
+                    {idx < segment.utterances.length - 1 ? ' ' : ''}
                   </span>
                 ))}
               </div>
