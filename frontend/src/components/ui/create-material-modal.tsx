@@ -6,13 +6,13 @@ import type { Material } from '../../types';
 interface CreateMaterialModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDraftCreated?: (material: Material, shouldNavigateToEdit?: boolean) => void;
+  onMaterialCreated?: (material: Material, shouldNavigateToEdit?: boolean) => void;
 }
 
 export const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({
   isOpen,
   onClose,
-  onDraftCreated
+  onMaterialCreated
 }) => {
   const [key, setKey] = React.useState(0);
 
@@ -36,8 +36,8 @@ export const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({
     }
   }, [isOpen]);
 
-  const handleDraftCreated = (material: Material, shouldNavigateToEdit = false) => {
-    onDraftCreated?.(material, shouldNavigateToEdit);
+  const handleMaterialCreated = (material: Material, shouldNavigateToEdit = false) => {
+    onMaterialCreated?.(material, shouldNavigateToEdit);
     handleClose();
   };
 
@@ -57,8 +57,9 @@ export const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({
         <div className="py-2">
           <CreateMaterialForm
             key={key}
-            onDraftCreated={handleDraftCreated}
+            onMaterialCreated={handleMaterialCreated}
             onCancel={handleClose}
+            onFormSubmitted={handleClose}
           />
         </div>
       </div>

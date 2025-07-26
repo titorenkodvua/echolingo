@@ -5,13 +5,15 @@ import type { Material } from '../types';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface CreateMaterialFormProps {
-  onDraftCreated?: (material: Material, shouldNavigateToEdit?: boolean) => void;
+  onMaterialCreated?: (material: Material, shouldNavigateToEdit?: boolean) => void;
   onCancel?: () => void;
+  onFormSubmitted?: () => void; // Новый проп для немедленного закрытия
 }
 
 export const CreateMaterialForm: React.FC<CreateMaterialFormProps> = ({ 
-  onDraftCreated, 
-  onCancel 
+  onMaterialCreated, 
+  onCancel,
+  onFormSubmitted
 }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -78,6 +80,10 @@ export const CreateMaterialForm: React.FC<CreateMaterialFormProps> = ({
       setError('Audio file is required');
       return;
     }
+    
+    // ✅ Немедленно закрываем модальное окно при нажатии кнопки
+    onFormSubmitted?.();
+    
     setIsSubmitting(true);
     setError(null);
     setProgress('uploading');
@@ -173,7 +179,7 @@ export const CreateMaterialForm: React.FC<CreateMaterialFormProps> = ({
       
       // ✅ Вызываем колбэк только если компонент все еще активен
       if (isComponentActiveRef.current) {
-        onDraftCreated?.(matRes.data, true); // ✅ Указываем, что нужно перейти к редактированию
+        onMaterialCreated?.(matRes.data, true); // ✅ Указываем, что нужно перейти к редактированию
       } else {
         console.log('🚫 [CREATE_MATERIAL_FORM] Component unmounted, skipping navigation');
       }

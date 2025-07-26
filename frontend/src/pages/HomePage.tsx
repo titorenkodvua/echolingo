@@ -103,7 +103,7 @@ export const HomePage: React.FC = () => {
     setDeleteDialog({ isOpen: false, material: null });
   };
 
-  const handleDraftCreated = (material: Material, shouldNavigateToEdit = false) => {
+  const handleMaterialCreated = (material: Material, shouldNavigateToEdit = false) => {
     setShowCreateModal(false);
     
     // Только если явно указано - переходим к редактированию  
@@ -183,7 +183,7 @@ export const HomePage: React.FC = () => {
       <CreateMaterialModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onDraftCreated={handleDraftCreated}
+        onMaterialCreated={handleMaterialCreated}
       />
 
       {/* Delete confirmation dialog */}
