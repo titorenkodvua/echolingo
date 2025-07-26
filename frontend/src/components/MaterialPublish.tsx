@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Save, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { materialsApi } from '../utils/api';
 import type { Material, Transcription } from '../types';
 import { SegmentedTranscriptionView } from './SegmentedTranscriptionView';
@@ -31,7 +31,6 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showTranscription, setShowTranscription] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const [transcription, setTranscription] = useState<Transcription | undefined>(initialTranscription);
@@ -305,33 +304,10 @@ export const MaterialEdit: React.FC<MaterialPublishProps> = ({
           {/* Transcription Preview */}
           {transcription && (
             <div className="bg-base-200 rounded-md p-4">
-              <div className="flex justify-between items-center mb-2">
+              <div className="mb-2">
                 <h3 className="text-sm font-medium text-base-content">Transcription Preview</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowTranscription(!showTranscription)}
-                  className="inline-flex items-center text-sm text-primary hover:text-primary-focus"
-                >
-                  {showTranscription ? (
-                    <>
-                      <EyeOff className="w-4 h-4 mr-1" />
-                      Hide
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-4 h-4 mr-1" />
-                      Show
-                    </>
-                  )}
-                </button>
               </div>
-              {showTranscription ? (
-                <SegmentedTranscriptionView transcription={transcription} />
-              ) : (
-                <p className="text-sm text-base-content/70">
-                  Click &quot;Show&quot; to preview the transcription
-                </p>
-              )}
+              <SegmentedTranscriptionView transcription={transcription} />
             </div>
           )}
 
