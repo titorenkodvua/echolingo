@@ -4,12 +4,12 @@ import { materialsApi, transcriptionApi } from '../utils/api';
 import type { Material } from '../types';
 import { useQueryClient } from '@tanstack/react-query';
 
-interface DraftFormProps {
+interface CreateMaterialFormProps {
   onDraftCreated?: (material: Material, shouldNavigateToEdit?: boolean) => void;
   onCancel?: () => void;
 }
 
-export const DraftForm: React.FC<DraftFormProps> = ({ 
+export const CreateMaterialForm: React.FC<CreateMaterialFormProps> = ({ 
   onDraftCreated, 
   onCancel 
 }) => {
@@ -32,18 +32,18 @@ export const DraftForm: React.FC<DraftFormProps> = ({
   React.useEffect(() => {
     isComponentActiveRef.current = true; // ✅ Устанавливаем в true при монтировании
     return () => {
-      console.log('🔴 [DRAFT_FORM] Component is unmounting, setting active to false');
+      console.log('🔴 [CREATE_MATERIAL_FORM] Component is unmounting, setting active to false');
       isComponentActiveRef.current = false;
     };
   }, []); // ✅ Пустой массив зависимостей!
 
   // ✅ Функция отмены с остановкой поллинга
   const handleCancel = () => {
-    console.log('🚫 [DRAFT_FORM] User canceled, stopping polling');
+    console.log('🚫 [CREATE_MATERIAL_FORM] User canceled, stopping polling');
     isComponentActiveRef.current = false;
     
     // ✅ Обновляем список материалов при закрытии формы
-    console.log('🔄 [DRAFT_FORM] Invalidating materials cache on cancel');
+    console.log('🔄 [CREATE_MATERIAL_FORM] Invalidating materials cache on cancel');
     queryClient.invalidateQueries({ queryKey: ['materials'] });
     
     onCancel?.();
@@ -92,13 +92,13 @@ export const DraftForm: React.FC<DraftFormProps> = ({
       const material = draftRes.data;
       
       // ✅ Обновляем кеш сразу после создания материала
-      console.log('🔄 [DRAFT_FORM] Invalidating materials cache after draft creation');
+      console.log('🔄 [CREATE_MATERIAL_FORM] Invalidating materials cache after draft creation');
       queryClient.invalidateQueries({ queryKey: ['materials'] });
       
       // 2. Upload file
-      console.log('🔄 [DRAFT_FORM] Starting file upload for material:', material.id);
+      console.log('🔄 [CREATE_MATERIAL_FORM] Starting file upload for material:', material.id);
       const uploadRes = await materialsApi.uploadFile(material.id, file);
-      console.log('📤 [DRAFT_FORM] Upload response:', uploadRes);
+      console.log('📤 [CREATE_MATERIAL_FORM] Upload response:', uploadRes);
       
       if (!uploadRes.success || !uploadRes.data) throw new Error(uploadRes.error || 'Failed to upload file');
       const predictionId = uploadRes.data.predictionId;
@@ -107,11 +107,11 @@ export const DraftForm: React.FC<DraftFormProps> = ({
         throw new Error('No predictionId received from upload');
       }
       
-      console.log('🆔 [DRAFT_FORM] Got predictionId:', predictionId);
+      console.log('🆔 [CREATE_MATERIAL_FORM] Got predictionId:', predictionId);
       setProgress('transcribing');
       
       // ✅ Обновляем кеш после начала транскрипции (статус меняется на 'processing')
-      console.log('🔄 [DRAFT_FORM] Invalidating materials cache after upload start');
+      console.log('🔄 [CREATE_MATERIAL_FORM] Invalidating materials cache after upload start');
       queryClient.invalidateQueries({ queryKey: ['materials'] });
       
       // 3. Poll transcription status
@@ -121,29 +121,29 @@ export const DraftForm: React.FC<DraftFormProps> = ({
       
       while (attempts < maxAttempts && isComponentActiveRef.current) { // ✅ Проверяем активность компонента
         attempts++;
-        console.log(`🔍 [DRAFT_FORM] Polling attempt ${attempts}/${maxAttempts} (active: ${isComponentActiveRef.current})`);
+        console.log(`🔍 [CREATE_MATERIAL_FORM] Polling attempt ${attempts}/${maxAttempts} (active: ${isComponentActiveRef.current})`);
         
         const statusRes = await transcriptionApi.wait(predictionId);
-        console.log('📊 [DRAFT_FORM] Status response:', statusRes);
+        console.log('📊 [CREATE_MATERIAL_FORM] Status response:', statusRes);
         
         if (statusRes.success && statusRes.data) {
           status = statusRes.data.status || statusRes.data.data?.status;
-          console.log(`📈 [DRAFT_FORM] Current status: ${status}`);
+          console.log(`📈 [CREATE_MATERIAL_FORM] Current status: ${status}`);
           
           if (status === 'completed') {
-            console.log('✅ [DRAFT_FORM] Transcription completed!');
+            console.log('✅ [CREATE_MATERIAL_FORM] Transcription completed!');
             break;
           } else if (status === 'failed' || status === 'error') {
-            console.log(`❌ [DRAFT_FORM] Transcription failed with status: ${status}`);
+            console.log(`❌ [CREATE_MATERIAL_FORM] Transcription failed with status: ${status}`);
             throw new Error(`Transcription failed: ${status}`);
           } else {
-            console.log(`⏳ [DRAFT_FORM] Status: ${status}, continuing...`);
+            console.log(`⏳ [CREATE_MATERIAL_FORM] Status: ${status}, continuing...`);
           }
         }
         
         // ✅ Проверяем активность перед ожиданием
         if (!isComponentActiveRef.current) {
-          console.log('🚫 [DRAFT_FORM] Component unmounted, stopping polling');
+          console.log('🚫 [CREATE_MATERIAL_FORM] Component unmounted, stopping polling');
           return;
         }
         
@@ -152,12 +152,12 @@ export const DraftForm: React.FC<DraftFormProps> = ({
       
       // ✅ Проверяем активность перед завершением
       if (!isComponentActiveRef.current) {
-        console.log('🚫 [DRAFT_FORM] Component unmounted, canceling completion');
+        console.log('🚫 [CREATE_MATERIAL_FORM] Component unmounted, canceling completion');
         return;
       }
       
       if (status !== 'completed') {
-        console.log(`❌ [DRAFT_FORM] Timeout! Final status: ${status}`);
+        console.log(`❌ [CREATE_MATERIAL_FORM] Timeout! Final status: ${status}`);
         throw new Error('Transcription timeout');
       }
       
@@ -168,14 +168,14 @@ export const DraftForm: React.FC<DraftFormProps> = ({
       if (!matRes.success || !matRes.data) throw new Error(matRes.error || 'Failed to fetch material');
       
       // ✅ Принудительно обновляем кеш материалов
-      console.log('🔄 [DRAFT_FORM] Invalidating materials cache after transcription completion');
+      console.log('🔄 [CREATE_MATERIAL_FORM] Invalidating materials cache after transcription completion');
       queryClient.invalidateQueries({ queryKey: ['materials'] });
       
       // ✅ Вызываем колбэк только если компонент все еще активен
       if (isComponentActiveRef.current) {
         onDraftCreated?.(matRes.data, true); // ✅ Указываем, что нужно перейти к редактированию
       } else {
-        console.log('🚫 [DRAFT_FORM] Component unmounted, skipping navigation');
+        console.log('🚫 [CREATE_MATERIAL_FORM] Component unmounted, skipping navigation');
       }
     } catch (err) {
       // ✅ Показываем ошибку только если компонент активен

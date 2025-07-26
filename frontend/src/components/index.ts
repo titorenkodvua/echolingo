@@ -1,4 +1,4 @@
-export { DraftForm } from './DraftForm';
+export { CreateMaterialForm } from './CreateMaterialForm';
 export { MaterialUpload } from './MaterialUpload';
 export { MaterialEdit } from './MaterialPublish';
 export { MaterialForm } from './MaterialForm';

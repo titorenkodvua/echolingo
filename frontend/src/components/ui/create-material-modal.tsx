@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { DraftForm } from '../DraftForm';
+import { CreateMaterialForm } from '../CreateMaterialForm';
 import type { Material } from '../../types';
 
 interface CreateMaterialModalProps {
@@ -55,7 +55,7 @@ export const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({
 
         {/* Modal content */}
         <div className="py-2">
-          <DraftForm
+          <CreateMaterialForm
             key={key}
             onDraftCreated={handleDraftCreated}
             onCancel={handleClose}
