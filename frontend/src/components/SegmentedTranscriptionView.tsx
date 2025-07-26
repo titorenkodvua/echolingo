@@ -89,7 +89,7 @@ export const SegmentedTranscriptionView: React.FC<SegmentedTranscriptionViewProp
                   return (
                     <span 
                       key={utt.uttId}
-                      className={`transition-colors duration-200 cursor-pointer px-1 py-0.5 -my-0.5 ${
+                      className={`transition-colors duration-200 cursor-pointer py-0.5 -my-0.5 ${
                         isUtteranceHovered
                           ? 'bg-primary/60 text-primary-content'
                           : isSegmentHighlighted

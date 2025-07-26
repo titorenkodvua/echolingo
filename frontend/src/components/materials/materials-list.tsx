@@ -94,6 +94,8 @@ export const MaterialsList: React.FC<MaterialsListProps> = ({ materials, loading
                         aria-label="Edit"
                         onClick={() => onEdit(material)}
                         className="btn-square"
+                        disabled={material.status === 'processing'}
+                        title={material.status === 'processing' ? 'Cannot edit while processing' : 'Edit material'}
                       />
                     )}
                     {onDelete && (
